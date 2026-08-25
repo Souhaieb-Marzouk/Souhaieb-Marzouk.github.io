@@ -1,1 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Souhaieb Marzouk — SOC Analyst, Threat Hunter, Cybersecurity Engineer. 10+ years of protocol-level network and security testing. HTB CDSA certified. Open-source CyberGuardian author." />
+<meta name="author" content="Souhaieb Marzouk" />
+<meta name="keywords" content="SOC Analyst, Threat Hunter, Cybersecurity, Splunk, Sigma, MITRE ATT&CK, HTB CDSA, CompTIA Security+, Network+" />
+<meta property="og:title" content="Souhaieb Marzouk | Cybersecurity Resume" />
+<meta property="og:description" content="SOC Analyst | Threat Hunter | Cybersecurity Engineer — interactive cinematic resume" />
+<meta property="og:type" content="website" />
+<title>Souhaieb Marzouk // Cyber Operations Profile</title>
 
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+
+<!-- ============== MATRIX RAIN BACKGROUND ============== -->
+<canvas id="matrix-bg" aria-hidden="true"></canvas>
+
+<!-- ============== SCAN-LINE OVERLAY ============== -->
+<div class="scanlines" aria-hidden="true"></div>
+
+<!-- ============== BOOT SPLASH ============== -->
+<div id="boot-splash" aria-hidden="true">
+  <div class="boot-inner">
+    <pre class="boot-text" id="boot-text"></pre>
+    <div class="boot-bar"><span id="boot-bar-fill"></span></div>
+    <div class="boot-status" id="boot-status">INITIALIZING SECURE SESSION...</div>
+  </div>
+</div>
+
+<!-- ============== TOP NAV ============== -->
+<nav id="topnav" class="topnav" aria-label="Section navigation">
+  <div class="nav-brand">
+    <span class="nav-bracket">[</span>
+    <span class="nav-user">souhaieb_marzouk</span>
+    <span class="nav-bracket">]</span>
+    <span class="nav-cursor">_</span>
+  </div>
+  <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <ul class="nav-links">
+    <li><a href="#header" data-section="header">// header</a></li>
+    <li><a href="#experiences" data-section="experiences">// experience</a></li>
+    <li><a href="#skills" data-section="skills">// skills</a></li>
+    <li><a href="#certifications" data-section="certifications">// certs</a></li>
+    <li><a href="#projects" data-section="projects">// projects</a></li>
+    <li><a href="#education" data-section="education">// education</a></li>
+    <li><a href="#contact" data-section="contact" class="nav-cta">// contact</a></li>
+  </ul>
+</nav>
+
+<!-- ============== HEADER / HERO ============== -->
+<header id="header" class="section section-header">
+  <div class="container header-grid">
+    <!-- LEFT: identity -->
+    <div class="header-identity">
+      <div class="status-line">
+        <span class="status-dot"></span>
+        <span class="status-text">SYSTEM ONLINE • SECURE CONNECTION ESTABLISHED</span>
+      </div>
+
+      <h1 class="hero-name" data-text="Souhaieb Marzouk">Souhaieb Marzouk</h1>
+      <div class="hero-title" id="hero-title-typed"></div>
+
+      <p class="hero-profile" id="hero-profile"></p>
+
+      <div class="hero-targeting" id="hero-targeting"></div>
+
+      <div class="hero-meta">
+        <div class="meta-row">
+          <span class="meta-label">LOCATION</span>
+          <span class="meta-value" id="meta-location"></span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">AVAILABILITY</span>
+          <span class="meta-value" id="meta-availability"></span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">WORK AUTH.</span>
+          <span class="meta-value" id="meta-auth"></span>
+        </div>
+      </div>
+
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#contact">
+          <span class="btn-prompt">&gt;</span> establish_contact()
+        </a>
+        <a class="btn btn-ghost" href="#experiences">
+          <span class="btn-prompt">&gt;</span> view_mission_log()
+        </a>
+      </div>
+    </div>
+
+    <!-- RIGHT: profile card + languages -->
+    <aside class="header-card" aria-label="Profile summary card">
+      <div class="card-header">
+        <span class="card-tag">PROFILE.DAT</span>
+        <span class="card-status">VERIFIED</span>
+      </div>
+      <div class="profile-pic-frame">
+        <img src="assets/profile-placeholder.svg"
+             alt="Souhaieb Marzouk profile portrait placeholder — replace with your own photo"
+             width="240" height="240" loading="eager" />
+        <div class="pic-corner pic-tl"></div>
+        <div class="pic-corner pic-tr"></div>
+        <div class="pic-corner pic-bl"></div>
+        <div class="pic-corner pic-br"></div>
+        <div class="pic-scan"></div>
+      </div>
+      <div class="card-stats">
+        <div class="stat">
+          <span class="stat-num">10+</span>
+          <span class="stat-lbl">YEARS XP</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">800+</span>
+          <span class="stat-lbl">FINDINGS</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">5</span>
+          <span class="stat-lbl">CERTS</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">400+</span>
+          <span class="stat-lbl">THM ROOMS</span>
+        </div>
+      </div>
+
+      <div class="card-langs">
+        <div class="card-subhead">LANGUAGES.SYS</div>
+        <ul class="lang-list" id="lang-list"></ul>
+      </div>
+    </aside>
+  </div>
+</header>
+
+<!-- ============== WORK EXPERIENCES ============== -->
+<section id="experiences" class="section section-experiences">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-no">01 //</span>
+      <h2 class="section-title">MISSION LOG — WORK EXPERIENCE</h2>
+      <div class="section-rule"></div>
+    </div>
+
+    <p class="section-intro">Reverse-chronological operational record. Each mission includes a <span class="hl">live simulation</span> of the technical environment. Click <span class="code-inline">EXPLORE_ROLE</span> to enter the simulation.</p>
+
+    <div class="timeline" id="timeline" role="list">
+      <!-- experiences injected by main.js -->
+    </div>
+  </div>
+</section>
+
+<!-- ============== SKILLS ============== -->
+<section id="skills" class="section section-skills">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-no">02 //</span>
+      <h2 class="section-title">ARSENAL — TECHNICAL SKILLS</h2>
+      <div class="section-rule"></div>
+    </div>
+
+    <p class="section-intro">Self-assessed proficiency levels. <span class="hl">Click any skill</span> to view the matching simulation — simulations are calibrated to the skill level (Beginner / Intermediate / Advanced / Expert).</p>
+
+    <div class="skills-grid" id="skills-grid">
+      <!-- skill groups injected by main.js -->
+    </div>
+  </div>
+</section>
+
+<!-- ============== CERTIFICATIONS ============== -->
+<section id="certifications" class="section section-certs">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-no">03 //</span>
+      <h2 class="section-title">CREDENTIALS — CERTIFICATIONS</h2>
+      <div class="section-rule"></div>
+    </div>
+
+    <p class="section-intro">Verified industry certifications. <span class="hl">Click any card</span> to open the official verification portal in a new tab.</p>
+
+    <div class="certs-grid" id="certs-grid">
+      <!-- certifications injected by main.js -->
+    </div>
+  </div>
+</section>
+
+<!-- ============== PROJECTS ============== -->
+<section id="projects" class="section section-projects">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-no">04 //</span>
+      <h2 class="section-title">DEPLOYMENTS — KEY PROJECTS</h2>
+      <div class="section-rule"></div>
+    </div>
+
+    <p class="section-intro">Open-source security tooling. Each project includes a <span class="hl">live in-browser simulation</span> and a link to the public GitHub repository.</p>
+
+    <div class="projects-grid" id="projects-grid">
+      <!-- projects injected by main.js -->
+    </div>
+  </div>
+</section>
+
+<!-- ============== EDUCATION ============== -->
+<section id="education" class="section section-education">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-no">05 //</span>
+      <h2 class="section-title">TRAINING — EDUCATION</h2>
+      <div class="section-rule"></div>
+    </div>
+    <div class="edu-list" id="edu-list">
+      <!-- education injected by main.js -->
+    </div>
+  </div>
+</section>
+
+<!-- ============== CONTACT ============== -->
+<section id="contact" class="section section-contact">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-no">06 //</span>
+      <h2 class="section-title">ESTABLISH CONTACT</h2>
+      <div class="section-rule"></div>
+    </div>
+
+    <p class="section-intro">Secure communication channels below. All links open in the appropriate client / new tab.</p>
+
+    <div class="contact-grid" id="contact-grid">
+      <!-- contact items injected by main.js -->
+    </div>
+
+    <div class="contact-foot">
+      <span class="blink">█</span>
+      <span class="contact-foot-text">awaiting_input...</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FOOTER ============== -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-left">
+      <span class="footer-bracket">[</span>
+      <span>root@kali:~/resume# </span>
+      <span class="footer-cmd" id="footer-cmd"></span>
+      <span class="footer-cursor blink">█</span>
+    </div>
+    <div class="footer-right">
+      &copy; <span id="footer-year"></span> Souhaieb Marzouk • Built with vanilla JS • No cookies • No tracking
+    </div>
+  </div>
+</footer>
+
+<!-- ============== MODAL HOST ============== -->
+<div id="modal-host" class="modal-host" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-frame">
+    <div class="modal-frame-corner mfc-tl"></div>
+    <div class="modal-frame-corner mfc-tr"></div>
+    <div class="modal-frame-corner mfc-bl"></div>
+    <div class="modal-frame-corner mfc-br"></div>
+    <button class="modal-close" data-close-modal aria-label="Close simulation">×</button>
+    <header class="modal-header">
+      <div class="modal-title-bar">
+        <span class="modal-dots"><span></span><span></span><span></span></span>
+        <span class="modal-title" id="modal-title">SIMULATION</span>
+        <span class="modal-id" id="modal-id"></span>
+      </div>
+      <nav class="modal-tabs" id="modal-tabs"></nav>
+    </header>
+    <div class="modal-body" id="modal-body">
+      <!-- simulation content rendered here -->
+    </div>
+    <footer class="modal-footer">
+      <span class="modal-footer-status" id="modal-footer-status">[ simulation_ready ]</span>
+      <span class="modal-footer-blk">PRESS <kbd>ESC</kbd> TO EXIT</span>
+    </footer>
+  </div>
+</div>
+
+<!-- ============== SCRIPTS ============== -->
+<script src="js/data.js"></script>
+<script src="js/simulations.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
