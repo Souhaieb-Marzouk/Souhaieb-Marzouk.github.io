@@ -27,6 +27,7 @@ const RESUME_DATA = {
       linkedin: "https://www.linkedin.com/in/souhaiebmarzouk",
       github:   "https://github.com/Souhaieb-Marzouk",
       website:  "https://www.cyberpulseacademy.com",
+      tryhackme:  "https://tryhackme.com/p/Souhaieb.M",
       mapQuery: "Tunis, Tunisia"
     },
     languages: [
@@ -132,114 +133,115 @@ const RESUME_DATA = {
       group: "SIEM & Detection",
       icon: "📡",
       skills: [
-        { name: "Splunk SPL",            level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB CDSA","Home Lab"] },
-        { name: "Splunk CIM",            level: "Beginner",     percent: 25, sources: ["TryHackMe"] },
-        { name: "Splunk Alerts/Dashboards", level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB CDSA"] },
-        { name: "Sysmon",                level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB","Home Lab"] },
-        { name: "Windows Event Logs",    level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB CDSA","Home Lab"] },
-        { name: "Kibana",                level: "Beginner",     percent: 25, sources: ["TryHackMe","HTB CDSA"] },
-        { name: "Log Parsing",           level: "Advanced",     percent: 75, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
-        { name: "Sigma Rule Authoring",  level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB CDSA","Home Lab"] },
-        { name: "Detection Engineering", level: "Advanced",     percent: 75, sources: ["TryHackMe","HTB","Home Lab","Sagemcom","LibertyGlobal"] },
-        { name: "Alert Triage",          level: "Advanced",     percent: 75, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] }
+        { name: "Splunk SPL",            level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA","Home Lab"] },
+        { name: "Splunk CIM",            level: "Beginner",     percent: 40, sources: ["TryHackMe"] },
+        { name: "Splunk Alerts/Dashboards", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA"] },
+        { name: "Sysmon",                level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Home Lab"] },
+        { name: "Windows Event Logs",    level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA","Home Lab"] },
+        { name: "Kibana",                level: "Beginner",     percent: 40, sources: ["TryHackMe","HTB CDSA"] },
+        { name: "Log Parsing",           level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
+        { name: "Sigma Rule Authoring",  level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA","Home Lab"] },
+        { name: "Detection Engineering", level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Home Lab","Sagemcom","LibertyGlobal"] },
+        { name: "Alert Triage",          level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] }
       ]
     },
     {
       group: "Threat Hunting & Forensics",
       icon: "🔍",
       skills: [
-        { name: "Hypothesis-driven Hunting", level: "Advanced", percent: 75, sources: ["TryHackMe","HTB","Home Lab","Sagemcom","LibertyGlobal"] },
-        { name: "Network Forensics / Packet Analysis", level: "Advanced", percent: 75, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
-        { name: "Memory Forensics (Volatility 3)", level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB CDSA"] },
-        { name: "Disk Forensics (Autopsy)", level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB CDSA"] },
-        { name: "Disk Forensics (FTK Imager)", level: "Beginner", percent: 25, sources: ["TryHackMe","HTB CDSA"] },
-        { name: "Malware Analysis (YARA)", level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB","Home Lab"] },
-        { name: "Malware Analysis (PEStudio)", level: "Beginner", percent: 25, sources: ["TryHackMe","HTB CDSA"] },
-        { name: "Process Analysis (Procmon)", level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB CDSA"] },
-        { name: "KAPE", level: "Beginner", percent: 25, sources: ["TryHackMe","HTB CDSA"] },
-        { name: "Steganography Detection", level: "Beginner", percent: 25, sources: ["TryHackMe"] }
+        { name: "Hypothesis-driven Hunting", level: "Advanced", percent: 80, sources: ["TryHackMe","HTB","Home Lab","Sagemcom","LibertyGlobal"] },
+        { name: "Network Forensics / Packet Analysis", level: "Advanced", percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
+        { name: "Memory Forensics (Volatility 3)", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA"] },
+        { name: "Disk Forensics (Autopsy)", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA"] },
+        { name: "Disk Forensics (FTK Imager)", level: "Beginner", percent: 40, sources: ["TryHackMe","HTB CDSA"] },
+        { name: "Malware Analysis (YARA)", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Home Lab"] },
+        { name: "Malware Analysis (PEStudio)", level: "Beginner", percent: 40, sources: ["TryHackMe","HTB CDSA"] },
+        { name: "Process Analysis (Procmon)", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA"] },
+        { name: "KAPE", level: "Beginner", percent: 40, sources: ["TryHackMe","HTB CDSA"] },
+        { name: "Steganography Detection", level: "Beginner", percent: 40, sources: ["TryHackMe"] }
       ]
     },
     {
       group: "Penetration Testing & VA",
       icon: "⚔️",
       skills: [
-        { name: "Nmap",            level: "Advanced",     percent: 75, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
-        { name: "Wireshark",       level: "Advanced",     percent: 75, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
-        { name: "tcpdump",         level: "Advanced",     percent: 75, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
-        { name: "OSINT Framework", level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB"] },
-        { name: "OWASP Top 10",    level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB"] },
-        { name: "CVSS v3.1",       level: "Advanced",     percent: 75, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
-        { name: "NIST SP 800-115", level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB","LibertyGlobal"] },
-        { name: "Burp Suite",      level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB"] },
-        { name: "Metasploit",      level: "Beginner",     percent: 25, sources: ["TryHackMe","HTB"] }
+        { name: "Nmap",            level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
+        { name: "Wireshark",       level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
+        { name: "tcpdump",         level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
+        { name: "OSINT Framework", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB"] },
+        { name: "OWASP Top 10",    level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB"] },
+        { name: "CVSS v3.1",       level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
+        { name: "NIST SP 800-115", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","LibertyGlobal"] },
+        { name: "Burp Suite",      level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB"] },
+        { name: "Metasploit",      level: "Beginner",     percent: 40, sources: ["TryHackMe","HTB"] }
+      ]
+    },
+	{
+      group: "Networking & Protocols",
+      icon: "🌐",
+	  split: true,
+      skills: [
+        { name: "TCP/IP",        level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
+        { name: "DHCP",          level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
+        { name: "DNS",           level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
+        { name: "HTTP/HTTPS",    level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
+        { name: "SIP/RTP",       level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
+        { name: "SSH",           level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
+        { name: "TLS",           level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
+        { name: "TR-069 / CWMP", level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal"] },
+        { name: "ARP",           level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
+        { name: "ICMP",          level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
+        { name: "GRE",           level: "Intermediate", percent: 60, sources: ["Sagemcom"] },
+        { name: "PPP",           level: "Intermediate", percent: 60, sources: ["Sagemcom"] },
+        { name: "WiFi WPA2/WPA3/WiFi 6", level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal"] },
+        { name: "DOCSIS",        level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal"] },
+        { name: "XGPON",         level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal"] },
+        { name: "VoIP Security", level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal"] },
+        { name: "Firewall",      level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
+        { name: "ACL",           level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
+        { name: "NAT",           level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
+        { name: "QoS",           level: "Intermediate", percent: 60, sources: ["Sagemcom","LibertyGlobal"] },
+        { name: "IPSec",         level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal"] },
+        { name: "AES Encryption", level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal"] }
       ]
     },
     {
       group: "Cloud & DevSecOps",
       icon: "☁️",
       skills: [
-        { name: "Azure",          level: "Beginner",     percent: 25, sources: ["TryHackMe","Capgemini"] },
-        { name: "Docker",         level: "Intermediate", percent: 50, sources: ["TryHackMe","LibertyGlobal"] },
-        { name: "Jenkins",        level: "Intermediate", percent: 50, sources: ["TryHackMe","Capgemini"] },
-        { name: "GitHub Actions", level: "Intermediate", percent: 50, sources: ["TryHackMe","Capgemini"] },
-        { name: "TheHive",        level: "Beginner",     percent: 25, sources: ["TryHackMe","HTB"] }
+        { name: "Azure",          level: "Beginner",     percent: 40, sources: ["TryHackMe","Capgemini"] },
+        { name: "Docker",         level: "Intermediate", percent: 60, sources: ["TryHackMe","LibertyGlobal"] },
+        { name: "Jenkins",        level: "Intermediate", percent: 60, sources: ["TryHackMe","Capgemini"] },
+        { name: "GitHub Actions", level: "Intermediate", percent: 60, sources: ["TryHackMe","Capgemini"] },
+        { name: "TheHive",        level: "Beginner",     percent: 40, sources: ["TryHackMe","HTB"] }
       ]
     },
     {
       group: "Frameworks & Standards",
       icon: "📋",
       skills: [
-        { name: "MITRE ATT&CK",    level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB CDSA","Home Lab"] },
-        { name: "Cyber Kill Chain", level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB"] },
-        { name: "Diamond Model",   level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB"] },
-        { name: "NIST SP 800-61r2", level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB","Sagemcom"] },
-        { name: "NIST CSF 2.0",    level: "Beginner",     percent: 25, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
+        { name: "MITRE ATT&CK",    level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA","Home Lab"] },
+        { name: "Cyber Kill Chain", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB"] },
+        { name: "Diamond Model",   level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB"] },
+        { name: "NIST SP 800-61r2", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Sagemcom"] },
+        { name: "NIST CSF 2.0",    level: "Beginner",     percent: 40, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
         { name: "ISO 27001:2022 Annex A", level: "Intermediate", percent: 60, sources: ["Sagemcom"] },
-        { name: "STRIDE",          level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
-        { name: "CVE",             level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] }
+        { name: "STRIDE",          level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
+        { name: "CVE",             level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] }
       ]
     },
     {
       group: "Scripting & Automation",
       icon: "💻",
       skills: [
-        { name: "Python",   level: "Intermediate", percent: 50, sources: ["TryHackMe","Coddy.Tech","Sagemcom"] },
-        { name: "PowerShell", level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB","Home Lab"] },
-        { name: "Bash",     level: "Intermediate", percent: 50, sources: ["TryHackMe","HTB","Final Study Project"] },
-        { name: "Java",     level: "Intermediate", percent: 50, sources: ["Capgemini","Final Study Project"] },
-        { name: "Selenium", level: "Intermediate", percent: 50, sources: ["Capgemini"] },
-        { name: "Appium",   level: "Intermediate", percent: 50, sources: ["Capgemini"] },
-        { name: "CI/CD (Jenkins)", level: "Intermediate", percent: 50, sources: ["Capgemini"] },
-        { name: "Jira",     level: "Advanced",     percent: 75, sources: ["Capgemini","Sagemcom","LibertyGlobal"] }
-      ]
-    },
-	{
-      group: "Networking & Protocols",
-      icon: "🌐",
-      skills: [
-        { name: "TCP/IP",        level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
-        { name: "DHCP",          level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
-        { name: "DNS",           level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
-        { name: "HTTP/HTTPS",    level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
-        { name: "SIP/RTP",       level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
-        { name: "SSH",           level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
-        { name: "TLS",           level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
-        { name: "TR-069 / CWMP", level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal"] },
-        { name: "ARP",           level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
-        { name: "ICMP",          level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
-        { name: "GRE",           level: "Intermediate", percent: 50, sources: ["Sagemcom"] },
-        { name: "PPP",           level: "Intermediate", percent: 50, sources: ["Sagemcom"] },
-        { name: "WiFi WPA2/WPA3/WiFi 6", level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal"] },
-        { name: "DOCSIS",        level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal"] },
-        { name: "XGPON",         level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal"] },
-        { name: "VoIP Security", level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal"] },
-        { name: "Firewall",      level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
-        { name: "ACL",           level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
-        { name: "NAT",           level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
-        { name: "QoS",           level: "Intermediate", percent: 50, sources: ["Sagemcom","LibertyGlobal"] },
-        { name: "IPSec",         level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal"] },
-        { name: "AES Encryption", level: "Advanced", percent: 75, sources: ["Sagemcom","LibertyGlobal"] }
+        { name: "Python",   level: "Intermediate", percent: 60, sources: ["TryHackMe","Coddy.Tech","Sagemcom"] },
+        { name: "PowerShell", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Home Lab"] },
+        { name: "Bash",     level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Final Study Project"] },
+        { name: "Java",     level: "Intermediate", percent: 60, sources: ["Capgemini","Final Study Project"] },
+        { name: "Selenium", level: "Intermediate", percent: 60, sources: ["Capgemini"] },
+        { name: "Appium",   level: "Intermediate", percent: 60, sources: ["Capgemini"] },
+        { name: "CI/CD (Jenkins)", level: "Intermediate", percent: 60, sources: ["Capgemini"] },
+        { name: "Jira",     level: "Advanced",     percent: 80, sources: ["Capgemini","Sagemcom","LibertyGlobal"] }
       ]
     }
   ],
@@ -301,15 +303,6 @@ const RESUME_DATA = {
       blurb: ""
     },
     {
-      title: "Jr Penetration Tester",
-      issuer: "TryHackMe",
-      date: "2023",
-      logo: "✅",
-      logoColor: "#0066B3",
-      verifyUrl: "https://tryhackme.com/certificate/THM-AYYUBWYYQG",
-      blurb: "Learn the practical skills required to start your career as a professional penetration tester."
-    },
-    {
       title: "Google Cybersecurity Professional Certificate",
       issuer: "Google / Coursera",
       date: "2024",
@@ -335,6 +328,15 @@ const RESUME_DATA = {
       logoColor: "#0066B3",
       verifyUrl: "https://atsqa.org/certified-testers/profile/9d46a58bb59740188ab21ecebed04202",
       blurb: "Foundational software testing principles, test design techniques, test management — anchors my 10-year QA background."
+    },
+    {
+      title: "Jr Penetration Tester",
+      issuer: "TryHackMe",
+      date: "2023",
+      logo: "✅",
+      logoColor: "#0066B3",
+      verifyUrl: "https://tryhackme.com/certificate/THM-AYYUBWYYQG",
+      blurb: "Learn the practical skills required to start your career as a professional penetration tester."
     }
   ],
 

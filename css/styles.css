@@ -15,7 +15,7 @@
 
   --fg:           #d7f7e3;          /* phosphor green */
   --fg-soft:      #a8c9d8;          /* soft cyan */
-  --fg-dim:       #4a6678;          /* dim label */
+  --fg-dim:       #B0E0E6;          /* dim label */
   --fg-mute:      #2a3a4a;
 
   --neon:         #00ff88;          /* primary neon green */
@@ -265,7 +265,7 @@ body::after {
   margin: 0 0 36px;
   color: var(--fg-soft);
   font-size: 16px;
-  max-width: 720px;
+  max-width: 1050px;
   line-height: 1.7;
 }
 .section-intro .hl { color: var(--neon); }
@@ -744,7 +744,7 @@ body::after {
 /* ---------- 8. SKILLS ---------- */
 .skills-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 18px;
 }
 .skill-group {
@@ -783,7 +783,7 @@ body::after {
 
 .skill-list { list-style: none; }
 .skill-item {
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   cursor: pointer;
   transition: background .15s;
   padding: 4px 6px;
@@ -795,7 +795,7 @@ body::after {
 .skill-row {
   display: flex; justify-content: space-between; align-items: center;
   font-size: 13px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 .skill-name {
   color: var(--fg);
@@ -833,16 +833,16 @@ body::after {
   transition: width 1.4s cubic-bezier(.2,.8,.2,1);
 }
 .skill-sources {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--fg-dim);
-  margin-top: 3px;
+  margin-top: 5px;
   letter-spacing: 0.04em;
 }
 
 /* ---------- 9. CERTIFICATIONS ---------- */
 .certs-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
   gap: 16px;
 }
 .cert-card {
@@ -851,7 +851,13 @@ body::after {
   padding: 20px;
   cursor: pointer;
   display: flex; flex-direction: column; gap: 10px;
-  text-decoration: none;
+  text-align: left;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   transition: all .25s ease;
   opacity: 0;
   transform: translateY(15px);
@@ -875,12 +881,25 @@ body::after {
 
 .cert-head { display: flex; align-items: center; gap: 14px; }
 .cert-logo {
-  font-size: 34px;
-  width: 56px; height: 56px;
+  width: 110px; height: 56px;
   display: flex; align-items: center; justify-content: center;
   border: 1px solid var(--line);
-  background: var(--bg-3);
-  filter: drop-shadow(0 0 8px currentColor);
+  background: #fff;
+  padding: 6px 8px;
+  flex-shrink: 0;
+  transition: box-shadow .25s ease;
+}
+.cert-card:hover .cert-logo,
+.cert-card:focus-visible .cert-logo {
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
+}
+.cert-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 .cert-meta { flex: 1; }
 .cert-title {
@@ -1092,7 +1111,7 @@ body::after {
   color: var(--fg-soft);
   line-height: 1.65;
   margin-top: 10px;
-  max-width: 720px;
+  max-width: 1050px;
 }
 .edu-period {
   font-size: 13px;
@@ -1644,4 +1663,316 @@ body::after {
 .skip-link:focus {
   left: 12px;
   top: 12px;
+}
+
+/* ---------- 17. SPLIT SKILL GROUP (Networking & Protocols) ---------- */
+/* Span exactly TWO columns of the parent .skills-grid so the group is the
+   width of two normal lists; the inner .skill-split-grid then places the two
+   <ul> side-by-side, each one normal-list wide. */
+.skill-group-split {
+  grid-column: span 2;
+}
+.skill-split-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+.skill-split-grid .skill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;                          /* keep item margin doing the spacing */
+}
+/* On narrow viewports stack the two sub-lists and let the group fill the row */
+@media (max-width: 720px) {
+  .skill-group-split { grid-column: 1 / -1; }
+  .skill-split-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- 18. SKILL MODAL — SOURCES / RADAR / LIVE SIM ---------- */
+.skill-sources-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--fg-soft);
+  line-height: 1.9;
+}
+.skill-sources-list .src-mark { color: var(--neon); margin-right: 6px; }
+.source-context-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.source-context-list li {
+  border-left: 2px solid var(--neon-2);
+  padding-left: 10px;
+}
+
+/* Proficiency Radar */
+.radar-wrap {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  padding: 18px;
+}
+.radar-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 8px;
+  padding: 18px 8px 24px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  height: 240px;
+}
+.radar-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+.radar-bar-fill {
+  width: 100%;
+  max-width: 48px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  transition: height 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.4s;
+}
+.radar-bar.active .radar-bar-fill {
+  background: linear-gradient(180deg, var(--neon-2), var(--neon));
+  box-shadow: 0 0 10px var(--neon);
+  border-color: var(--neon);
+}
+.radar-bar.current .radar-bar-fill {
+  background: linear-gradient(180deg, var(--neon), var(--neon-3));
+  box-shadow: 0 0 14px var(--neon);
+}
+.radar-bar.current::after {
+  content: '◂ YOU ARE HERE';
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--neon);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+.radar-bar-lbl {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--fg-dim);
+  letter-spacing: 0.08em;
+}
+.radar-bar.active .radar-bar-lbl { color: var(--neon-2); }
+.radar-bar.current .radar-bar-lbl { color: var(--neon); font-weight: 700; }
+.radar-bar-pct {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--fg-dim);
+}
+.radar-summary {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.radar-summary-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+.rs-key { color: var(--fg-dim); }
+.rs-val { color: var(--fg); font-weight: 700; }
+.radar-descriptor {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--fg-dim);
+  line-height: 1.6;
+  padding: 8px 10px;
+  border-left: 2px solid var(--neon-2);
+  background: rgba(0, 224, 255, 0.04);
+}
+
+/* ---------- 19. CERT VIEW MODAL ---------- */
+.cert-view-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+.cert-view-image-block,
+.cert-view-info-block {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  padding: 14px;
+}
+.cert-image-frame {
+  position: relative;
+  background: #0a0f1c;
+  border: 1px solid var(--line);
+  padding: 8px;
+}
+.cert-image-frame img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.cert-image-corner {
+  position: absolute;
+  width: 14px; height: 14px;
+  border-color: var(--neon);
+  border-style: solid;
+  border-width: 0;
+}
+.ctc-tl { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; }
+.ctc-tr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; }
+.ctc-bl { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; }
+.ctc-br { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; }
+
+.cert-view-issuer-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--line);
+  margin-bottom: 12px;
+}
+.cert-view-issuer-logo {
+  width: 96px;
+  height: 40px;
+  object-fit: contain;
+  background: #fff;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.cv-issuer-name {
+  font-family: var(--display);
+  font-weight: 700;
+  color: var(--fg);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+.cv-issue-date {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--neon-2);
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+
+.cert-view-desc {
+  margin-bottom: 14px;
+}
+.cvd-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--neon-2);
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+.cvd-text {
+  font-size: 13px;
+  color: var(--fg-soft);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.cert-view-meta {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+.cvm-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--line);
+}
+.cvm-row:last-child { border-bottom: none; }
+.cvm-key {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--fg-dim);
+  letter-spacing: 0.1em;
+}
+.cvm-val {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--fg);
+  word-break: break-word;
+}
+
+.cert-view-verify-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, rgba(0,255,136,0.18), rgba(0,224,255,0.12));
+  border: 1px solid var(--neon);
+  color: var(--neon);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.cert-view-verify-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; right: 0; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0,255,136,0.25), transparent);
+  transition: left .6s ease;
+}
+.cert-view-verify-btn:hover::before { left: 100%; }
+.cert-view-verify-btn:hover {
+  background: linear-gradient(135deg, rgba(0,255,136,0.32), rgba(0,224,255,0.22));
+  box-shadow: 0 0 24px rgba(0, 255, 136, 0.4);
+  color: #fff;
+}
+.cert-view-verify-btn .arrow { font-size: 16px; transition: transform .18s; }
+.cert-view-verify-btn:hover .arrow { transform: translate(2px, -2px); }
+
+/* Responsive cert-view modal */
+@media (max-width: 900px) {
+  .cert-view-grid { grid-template-columns: 1fr; }
+  .cvm-row { grid-template-columns: 100px 1fr; }
+}
+
+/* ---------- 20. SCROLL-SPY POLISH ---------- */
+.nav-links a {
+  position: relative;
+}
+.nav-links a.active::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: -2px;
+  height: 2px;
+  background: var(--neon);
+  box-shadow: 0 0 6px var(--neon);
 }

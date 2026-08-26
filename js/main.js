@@ -259,54 +259,107 @@
 
   /* =================================================================
    *  SKILLS (grouped grid)
+   *  - Sources are NOT shown in the main grid (only in the modal).
+   *  - Groups flagged with `split: true` render as two parallel sub-lists.
    * ================================================================= */
   function renderSkills() {
     const host = $('#skills-grid');
     if (!host) return;
-    host.innerHTML = D.skills.map(g => `
-      <section class="skill-group">
-        <header class="skill-group-head">
-          <span class="skill-group-icon">${g.icon}</span>
-          <h3 class="skill-group-name">${escapeHtml(g.group)}</h3>
-        </header>
-        <ul class="skill-list">
-          ${g.skills.map(s => `
-            <li class="skill-item" data-skill-name="${escapeHtml(s.name)}" data-skill-group="${escapeHtml(g.group)}">
-              <div class="skill-row">
-                <span class="skill-name">${escapeHtml(s.name)}</span>
-                <span class="skill-level ${s.level}">${s.level}</span>
-              </div>
-              <div class="skill-bar"><div class="skill-bar-fill" data-pct="${s.percent}"></div></div>
-              <div class="skill-sources">${s.sources.join(' · ')}</div>
-            </li>
-          `).join('')}
-        </ul>
-      </section>
-    `).join('');
+
+    const renderItem = (s, groupName) => `
+      <li class="skill-item" data-skill-name="${escapeHtml(s.name)}" data-skill-group="${escapeHtml(groupName)}">
+        <div class="skill-row">
+          <span class="skill-name">${escapeHtml(s.name)}</span>
+          <span class="skill-level ${s.level}">${s.level}</span>
+        </div>
+        <div class="skill-bar"><div class="skill-bar-fill" data-pct="${s.percent}"></div></div>
+      </li>
+    `;
+
+    const renderGroup = (g) => {
+	  // Split group into two parallel sub-lists (vertically aligned)
+	  if (g.split && g.skills.length > 4) {
+		const mid = Math.ceil(g.skills.length / 2);
+		const left  = g.skills.slice(0, mid);
+		const right = g.skills.slice(mid);
+		return `
+		  <section class="skill-group skill-group-split">
+			<header class="skill-group-head">
+			  <span class="skill-group-icon">${g.icon}</span>
+			  <h3 class="skill-group-name">${escapeHtml(g.group)}</h3>
+			</header>
+			<div class="skill-split-grid">
+			  <ul class="skill-list">${left.map(s => renderItem(s, g.group)).join('')}</ul>
+			  <ul class="skill-list">${right.map(s => renderItem(s, g.group)).join('')}</ul>
+			</div>
+		  </section>
+		`;
+	  }
+	  // Standard single-list group
+	  return `
+		<section class="skill-group">
+		  <header class="skill-group-head">
+			<span class="skill-group-icon">${g.icon}</span>
+			<h3 class="skill-group-name">${escapeHtml(g.group)}</h3>
+		  </header>
+		  <ul class="skill-list">
+			${g.skills.map(s => renderItem(s, g.group)).join('')}
+		  </ul>
+		</section>
+	  `;
+	};
+
+    host.innerHTML = D.skills.map(renderGroup).join('');
   }
 
   /* =================================================================
    *  CERTIFICATIONS (grid)
+   *  - Real issuer logo (SVG), title, issuer, date — no description here.
+   *  - Card click opens the cert-view modal (image + description + VERIFY).
+   *  - VERIFY_CERTIFICATE button stays external (in modal only).
    * ================================================================= */
+  const ISSUER_LOGO_PATH = {
+    htb:	'assets/issuer-logos/HTB-Logo.png',
+    comptia:	'assets/issuer-logos/Comptia-Logo.png',
+    tryhackme:	'assets/issuer-logos/THM-Logo.jpg',
+    google:	'assets/issuer-logos/Google-Logo.png',
+    atsqa:	'assets/issuer-logos/ATSQA-Logo.jpeg'
+  };
+
+  function issuerLogoSrc(c) {
+    if (c.issuerKey && ISSUER_LOGO_PATH[c.issuerKey]) return ISSUER_LOGO_PATH[c.issuerKey];
+    // Fallback map by issuer name
+    const m = {
+      'HackTheBox':	'assets/issuer-logos/HTB-Logo.png',
+      'CompTIA':	'assets/issuer-logos/Comptia-Logo.png',
+      'TryHackMe':	'assets/issuer-logos/THM-Logo.jpg',
+      'Google / Coursera':	'assets/issuer-logos/Google-Logo.png',
+      'AT*SQA':	'assets/issuer-logos/ATSQA-Logo.jpeg'
+    };
+    return m[c.issuer] || 'assets/issuer-logos/Google-Logo.png';
+  }
+
   function renderCerts() {
     const host = $('#certs-grid');
     if (!host) return;
     host.innerHTML = D.certifications.map((c, i) => `
-      <a class="cert-card" href="${escapeHtml(c.verifyUrl)}" target="_blank" rel="noopener noreferrer" aria-label="Verify ${escapeHtml(c.title)} at ${escapeHtml(c.issuer)} (opens new tab)">
+      <button type="button" class="cert-card" data-cert-index="${i}"
+              aria-label="View certificate: ${escapeHtml(c.title)} — ${escapeHtml(c.issuer)} (${escapeHtml(c.date)})">
         <div class="cert-head">
-          <div class="cert-logo" style="color:${c.logoColor || 'var(--neon)'}">${c.logo}</div>
+          <div class="cert-logo">
+            <img src="${issuerLogoSrc(c)}" alt="${escapeHtml(c.issuer)} logo" loading="lazy" />
+          </div>
           <div class="cert-meta">
             <div class="cert-title">${escapeHtml(c.title)}</div>
             <div class="cert-issuer">${escapeHtml(c.issuer)}</div>
             <div class="cert-date">${escapeHtml(c.date)}</div>
           </div>
         </div>
-        <div class="cert-blurb">${escapeHtml(c.blurb)}</div>
         <div class="cert-verify">
-          <span>VERIFY_CERTIFICATE</span>
+          <span>VIEW_CERTIFICATE</span>
           <span class="arrow">→</span>
         </div>
-      </a>
+      </button>
     `).join('');
   }
 
@@ -376,6 +429,7 @@
       { label: 'LINKEDIN',  value: 'linkedin.com/in/souhaiebmarzouk', href: c.linkedin, icon: 'in' },
       { label: 'GITHUB',    value: 'github.com/Souhaieb-Marzouk', href: c.github, icon: '</>' },
       { label: 'WEBSITE',   value: 'cyberpulseacademy.com', href: c.website, icon: '🌐' },
+      { label: 'Try Hack Me',   value: 'Souhaieb.M', href: c.tryhackme, icon: '🌐' },
       { label: 'LOCATION',  value: D.personal.location, href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.mapQuery)}`, icon: '◉' }
     ];
     host.innerHTML = items.map(i => `
@@ -473,20 +527,42 @@
       if (toggle) toggle.setAttribute('aria-expanded', 'false');
     }));
 
-    // active section detection
-    const sections = $$('section[id], header[id]');
+    // active section detection — scroll-based scroll-spy
+    // (IntersectionObserver proved unreliable for tall sections like Skills & Certifications;
+    //  the scroll handler below picks the section whose top is just above the nav line.)
     const navLinks = $$('.nav-links a');
-    if (!('IntersectionObserver' in window) || !sections.length) return;
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (!e.isIntersecting) return;
-        const id = e.target.id;
-        navLinks.forEach(a => {
-          a.classList.toggle('active', a.getAttribute('data-section') === id);
-        });
+    const navHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-h') || '60px', 10);
+    const probeOffset = navHeight + 80; // pixels below nav where the "active" probe sits
+    let ticking = false;
+
+    function updateActive() {
+      const probeY = (window.scrollY || window.pageYOffset) + probeOffset;
+      let activeId = null;
+      // walk sections in DOM order; the last one whose top is above the probe wins
+      const sections = Array.from(document.querySelectorAll('section[id], header[id]'));
+      for (let i = 0; i < sections.length; i++) {
+        const top = sections[i].getBoundingClientRect().top + window.scrollY;
+        if (top <= probeY) activeId = sections[i].id;
+      }
+      // At the very top of the page (no scroll), default to header
+      if (!activeId && sections.length) activeId = sections[0].id;
+      navLinks.forEach(a => {
+        a.classList.toggle('active', a.getAttribute('data-section') === activeId);
       });
-    }, { threshold: 0.35, rootMargin: '-80px 0px -50% 0px' });
-    sections.forEach(s => io.observe(s));
+      ticking = false;
+    }
+
+    function onScroll() {
+      if (!ticking) {
+        window.requestAnimationFrame(updateActive);
+        ticking = true;
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    // initial paint
+    updateActive();
   }
 
   /* =================================================================
@@ -499,7 +575,7 @@
     const body = $('#modal-body');
     const tabsHost = $('#modal-tabs');
 
-    function open({ key, title, id, skill }) {
+    function open({ key, title, id, skill, cert }) {
       // cleanup
       if (body.__cleanup) { body.__cleanup(); body.__cleanup = null; }
       body.innerHTML = '';
@@ -507,7 +583,7 @@
       titleEl.textContent = title || 'SIMULATION';
       idEl.textContent = id ? `// ${id}` : '';
 
-      const ctx = { skill };
+      const ctx = { skill, cert };
       window.SIMULATIONS.render(key, body, ctx);
 
       // build tabs
@@ -567,6 +643,23 @@
           title: `${name} — Skill Simulation`,
           id: `skill.${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
           skill
+        });
+        return;
+      }
+      const certCard = e.target.closest('.cert-card[data-cert-index]');
+      if (certCard) {
+        const idx = parseInt(certCard.getAttribute('data-cert-index'), 10);
+        const cert = D.certifications[idx];
+        if (!cert) return;
+        // VERIFY_CERTIFICATE button INSIDE the card → external link, not modal
+        // (There's no such button in the card, but be safe for future changes.)
+        if (e.target.closest('[data-cert-verify]')) return;
+        e.preventDefault();
+        open({
+          key: '__cert_view__',
+          title: 'CERTIFICATE DETAILS',
+          id: `cert.${idx}`,
+          cert
         });
         return;
       }

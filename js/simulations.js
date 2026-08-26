@@ -1075,50 +1075,12 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span>
     `;
   };
 
-  // Generic fallback simulation for any skill not explicitly defined
-  function genericSkillSim(skill, host) {
-    const lvl = skill.level.toLowerCase();
-    const pct = skill.percent;
-    const cap = lvl.charAt(0).toUpperCase() + lvl.slice(1);
-
-    host.innerHTML = `
-      <div class="skill-modal-grid">
-        <div class="skill-modal-block">
-          <div class="skill-modal-head">
-            <span class="skill-modal-name">${skill.name}</span>
-            <span class="skill-modal-lvl">${cap.toUpperCase()}</span>
-          </div>
-          <div class="sim-p">Proficiency self-assessed at <strong style="color:var(--neon)">${cap}</strong> (${pct}%). Demonstrated via the following sources:</div>
-          <ul style="list-style:none;padding:0;font-size:12px;color:var(--fg-soft);line-height:1.9">
-            ${skill.sources.map(s => `<li>▸ ${s}</li>`).join('')}
-          </ul>
-        </div>
-        <div class="skill-modal-block">
-          <div class="skill-modal-head">
-            <span class="skill-modal-name">proficiency radar</span>
-          </div>
-          <div style="height:200px;display:flex;align-items:flex-end;justify-content:space-around;gap:6px;padding:14px;border:1px solid var(--line);background:var(--bg)">
-            ${[0,1,2,3,4].map(i => {
-              const myPct = Math.max(8, (i+1) * 20);
-              const active = myPct <= pct;
-              return `<div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-                <div style="width:32px;height:${active ? myPct * 1.6 : 6}px;background:${active ? 'var(--neon)' : 'var(--bg-3)'};box-shadow:${active ? '0 0 8px var(--neon)' : 'none'};transition:height .8s ease"></div>
-                <div style="font-size:9px;color:var(--fg-dim);letter-spacing:0.1em">${['Newbie','Basic','Working','Pro','Expert'][i]}</div>
-              </div>`;
-            }).join('')}
-          </div>
-          <div style="margin-top:10px;font-size:11px;color:var(--neon-2);text-align:center">
-            Level: <strong style="color:var(--neon)">${cap}</strong> — ${pct}% mastery
-          </div>
-          <div style="margin-top:14px;font-size:11px;color:var(--fg-dim);line-height:1.6">
-            <strong style="color:var(--neon-2)">Simulation calibrated to level:</strong><br>
-            ${levelDescriptor(lvl)}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
+  // =========================================================================
+  //  SKILL MODAL — 3-tab structure (Sources / Proficiency / Live Simulation)
+  //  Every skill gets this structure regardless of whether a specific
+  //  SKILL_SIMS[key] renderer exists. Specific renderers populate only the
+  //  Live Simulation tab; generic skills get a level-calibrated live sim.
+  // =========================================================================
   function levelDescriptor(lvl) {
     switch (lvl) {
       case 'beginner':     return 'Aware of the tool, can execute basic operations with documentation, still learning the workflow.';
@@ -1127,6 +1089,395 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span>
       case 'expert':       return 'Recognised authority, sets standards, reviews others\' work, handles novel scenarios.';
       default:             return '—';
     }
+  }
+
+  function escapeHtmlS(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ---- Tab 1: SOURCES ----
+  function renderSourcesSection(skill) {
+    const cap = (skill.level || '').toUpperCase();
+    const pct = skill.percent;
+    return `
+      <div class="skill-modal-grid">
+        <div class="skill-modal-block">
+          <div class="skill-modal-head">
+            <span class="skill-modal-name">${escapeHtmlS(skill.name)}</span>
+            <span class="skill-modal-lvl">${cap}</span>
+          </div>
+          <div class="sim-p">Proficiency self-assessed at <strong style="color:var(--neon)">${cap.charAt(0) + cap.slice(1).toLowerCase()}</strong> (${pct}%). Demonstrated via the following sources:</div>
+          <ul class="skill-sources-list">
+            ${skill.sources.map(s => `<li><span class="src-mark">▸</span> ${escapeHtmlS(s)}</li>`).join('')}
+          </ul>
+          <div class="sim-p" style="margin-top:14px;font-size:11px;color:var(--fg-dim);line-height:1.6">
+            <strong style="color:var(--neon-2)">Level meaning:</strong><br>
+            ${levelDescriptor((skill.level || '').toLowerCase())}
+          </div>
+        </div>
+        <div class="skill-modal-block">
+          <div class="skill-modal-head">
+            <span class="skill-modal-name">where this skill was applied</span>
+          </div>
+          <div class="sim-p" style="font-size:12px;color:var(--fg-soft);line-height:1.7">
+            Each source above corresponds to a concrete environment where the skill was exercised:
+          </div>
+          <ul class="source-context-list">
+            ${skill.sources.map(src => {
+              const ctx = sourceContext(src);
+              return `<li><strong style="color:var(--neon-2)">${escapeHtmlS(src)}</strong><br><span style="color:var(--fg-dim);font-size:11px">${ctx}</span></li>`;
+            }).join('')}
+          </ul>
+        </div>
+      </div>
+    `;
+  }
+
+  function sourceContext(src) {
+    const map = {
+      'Sagemcom':      'Protocol-level vulnerability testing on ISP broadband gateways (BBox3, Vodafone, KDG, TalkTalk, Telia, KPN) — 5 years, 800+ findings.',
+      'LibertyGlobal': 'Senior vulnerability analysis on DOCSIS 3.0/3.1 Cable + XGS-PON Fibre products — 3 years, led team of 8 on XGS-PON.',
+      'Capgemini':     'Mobile & web test automation for AXA Assurance France (iOS/Android) — Selenium, Appium, Azure DevOps, shift-left security.',
+      'TryHackMe':     '400+ hands-on rooms completed, top 1% globally (rank ~2637). SOC Level 1 & 2 paths, Jr Penetration Tester path.',
+      'HTB':           'HackTheBox defensive & offensive labs — SOC, forensics, and detection engineering hands-on practice.',
+      'HTB CDSA':      'HackTheBox Certified Defensive Security Analyst exam — full attack-chain reconstruction, Splunk SPL, Sigma rules.',
+      'Home Lab':      'Personal SOC + Pentest home lab (VirtualBox: DC, victim, web server, attacker Kali) — 9-phase attack chain with detections.',
+      'Udemy':         'Self-authored 16-course cybersecurity curriculum on Udemy — 1,100+ students enrolled.'
+    };
+    return map[src] || 'Hands-on practice and applied exercises.';
+  }
+
+  // ---- Tab 2: PROFICIENCY RADAR ----
+  function renderRadarSection(skill) {
+    const lvl = (skill.level || '').toLowerCase();
+    const pct = skill.percent;
+    const cap = lvl.charAt(0).toUpperCase() + lvl.slice(1);
+    const tiers = [
+      { label: 'Newbie',     pct: 20 },
+      { label: 'Basic',      pct: 40 },
+      { label: 'Working',    pct: 60 },
+      { label: 'Pro',        pct: 80 },
+      { label: 'Expert',     pct: 100 }
+    ];
+    return `
+      <div class="radar-wrap">
+        <div class="skill-modal-head" style="margin-bottom:16px">
+          <span class="skill-modal-name">${escapeHtmlS(skill.name)} — proficiency radar</span>
+          <span class="skill-modal-lvl">${cap.toUpperCase()}</span>
+        </div>
+        <div class="radar-bars">
+          ${tiers.map((t, i) => {
+            const active = t.pct <= pct;
+            const isCurrent = (i === Math.floor(pct / 20) - (pct % 20 === 0 ? 1 : 0)) || (pct === 100 && i === tiers.length - 1);
+            return `
+              <div class="radar-bar ${active ? 'active' : ''} ${isCurrent ? 'current' : ''}">
+                <div class="radar-bar-fill" style="height:${active ? Math.max(20, t.pct) : 8}px"></div>
+                <div class="radar-bar-lbl">${t.label}</div>
+                <div class="radar-bar-pct">${t.pct}%</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+        <div class="radar-summary">
+          <div class="radar-summary-line">
+            <span class="rs-key">CURRENT_LEVEL</span>
+            <span class="rs-val" style="color:var(--neon)">${cap}</span>
+          </div>
+          <div class="radar-summary-line">
+            <span class="rs-key">MASTERY_PCT</span>
+            <span class="rs-val">${pct}%</span>
+          </div>
+          <div class="radar-summary-line">
+            <span class="rs-key">NEXT_MILESTONE</span>
+            <span class="rs-val" style="color:var(--neon-2)">${nextMilestone(pct, cap)}</span>
+          </div>
+        </div>
+        <div class="radar-descriptor">
+          <strong style="color:var(--neon-2)">Simulation calibrated to level:</strong>
+          <span>${levelDescriptor(lvl)}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function nextMilestone(pct, cap) {
+    if (pct >= 100) return 'Maintain and teach others';
+    if (pct >= 80)  return 'Expert (100%) — set standards, review peers';
+    if (pct >= 60)  return 'Advanced (80%) — own end-to-end workflows';
+    if (pct >= 40)  return 'Pro (60%) — troubleshoot independently';
+    if (pct >= 20)  return 'Working (40%) — comfortable in production';
+    return 'Basic (20%) — operate with documentation';
+  }
+
+  // ---- Tab 3: LIVE SIMULATION (generic, level-calibrated) ----
+  // Used when no specific SKILL_SIMS[key] exists. Generates a realistic
+  // work-environment CLI/config/activity simulation mentioning the skill.
+  function genericLiveSim(skill, host) {
+    const lvl = (skill.level || '').toLowerCase();
+    const cap = lvl.charAt(0).toUpperCase() + lvl.slice(1);
+    const name = skill.name;
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+
+    // The simulation scenario scales with level:
+    //   beginner     → guided exploration
+    //   intermediate → typical daily workflow
+    //   advanced     → multi-step investigation with findings
+    //   expert       → complex scenario + remediation + mentoring note
+    const scenario = buildScenario(name, lvl);
+    host.innerHTML = `
+      <div class="sim-h">${escapeHtmlS(name).toUpperCase()} — LIVE SIMULATION (${cap.toUpperCase()})</div>
+      <div class="sim-p">${scenario.intro}</div>
+      ${scenario.preBlock || ''}
+      <div class="term" id="generic-live-${slug}"></div>
+      ${scenario.postBlock || ''}
+      <div class="sim-p" style="margin-top:14px;font-size:11px;color:var(--fg-dim);line-height:1.6">
+        <strong style="color:var(--neon-2)">Level calibration:</strong> ${levelDescriptor(lvl)}
+      </div>
+    `;
+    attachTerminal($('#generic-live-' + slug, host), scenario.lines, { speed: 14, linePause: 110 });
+  }
+
+  // Build a level-appropriate scenario (CLI lines + intro + optional blocks)
+  function buildScenario(name, lvl) {
+    const t = ts();
+    // Base scenario per level
+    if (lvl === 'beginner') {
+      return {
+        intro: `Guided exploration of <strong>${escapeHtmlS(name)}</strong> — beginner workflow with documentation support.`,
+        lines: [
+          `$ # ${name} — beginner walkthrough`,
+          `$ man ${name.toLowerCase().replace(/\s+/g, '-')}`,
+          '[doc] NAME',
+          `[doc]   ${name} — overview and basic usage`,
+          '[doc] SYNOPSIS',
+          `[doc]   ${name.toLowerCase().replace(/\s+/g, '-')} [options] <args>`,
+          '$ # Step 1: identify version',
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} --version`,
+          `[ok] ${name} v1.0.2 (installed)`,
+          '$ # Step 2: run basic operation with help',
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} --help`,
+          '[ok] available subcommands: list, show, test, scan',
+          '$ # Step 3: execute a basic test',
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} test --dry-run`,
+          '[ok] dry-run completed — no side effects',
+          '$ # Read documentation before moving to intermediate workflows.'
+        ]
+      };
+    }
+    if (lvl === 'intermediate') {
+      return {
+        intro: `Typical daily workflow using <strong>${escapeHtmlS(name)}</strong> — independent troubleshooting in a production-like environment.`,
+        lines: [
+          `$ # ${name} — daily workflow @ ${t}`,
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} status`,
+          `[ok] service healthy | uptime 14d | 2 active sessions`,
+          '$ # Identify target',
+          '$ TARGET=192.168.56.103',
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} inspect $TARGET`,
+          '[*] inspecting target...',
+          `[ok] reachable | latency 4.2ms | fingerprint: linux 5.x`,
+          '$ # Run standard checks',
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} check --verbose $TARGET`,
+          '[*] running 6 checks...',
+          '[ok] config_baseline    PASS',
+          '[ok] auth_mechanism      PASS',
+          '[warn] tls_version       TLSv1.2 (consider TLSv1.3)',
+          '[ok] log_level           PASS',
+          '[ok] timeout_policy      PASS',
+          '[warn] default_credentials  review recommended',
+          '$ # Investigate warning',
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} trace --filter warn $TARGET`,
+          '[*] warning traced to config file /etc/default/cfg',
+          '[ok] remediation suggestion logged in /tmp/findings.log',
+          '$ # Workflow complete — 2 warnings, 0 critical'
+        ]
+      };
+    }
+    if (lvl === 'advanced') {
+      return {
+        intro: `Advanced scenario with <strong>${escapeHtmlS(name)}</strong> — multi-step investigation ending in findings and a remediation proposal.`,
+        lines: [
+          `$ # ${name} — advanced investigation @ ${t}`,
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} --batch --target 192.168.56.0/24`,
+          '[*] mapping target range (256 addresses)...',
+          '[+] 12 hosts up | 4 listening on the relevant port',
+          '$ # Deep inspection of the 4 candidates',
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} probe --deep --targets 192.168.56.103,192.168.56.110,192.168.56.115,192.168.56.121`,
+          '[*] probing...',
+          '[!] 192.168.56.103 — anomalous response pattern detected',
+          '[!] 192.168.56.110 — unexpected service on port 7547',
+          '$ # Correlate with logs',
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} logs --since 24h --grep "192.168.56.103"`,
+          '[+] 47 matching events in the last 24h',
+          '[!] beacon pattern every 60.0s — likely C2 channel',
+          '$ # Capture evidence',
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} capture --host 192.168.56.103 --out /tmp/evidence.pcap`,
+          '[ok] evidence saved (47 KB) | hash sha256=4f8c...e201',
+          '$ # Generate findings report',
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} report --out /tmp/findings.md`,
+          '[ok] report generated:',
+          '[ok]   - 1 CRITICAL: C2 beacon on 192.168.56.103:443',
+          '[ok]   - 1 HIGH:     unexpected service on .110:7547',
+          '[ok]   - 2 MEDIUM:  TLS misconfig, weak ciphers',
+          '$ # Recommended remediation:',
+          '$ #   1. Isolate 192.168.56.103 from the LAN',
+          '$ #   2. Block outbound 443 to attacker IP at the perimeter',
+          '$ #   3. Reset credentials on the affected host',
+          '$ #   4. Re-image + re-deploy with hardened baseline'
+        ]
+      };
+    }
+    if (lvl === 'expert') {
+      return {
+        intro: `Expert-level scenario with <strong>${escapeHtmlS(name)}</strong> — novel situation requiring standards-setting decisions and peer review.`,
+        lines: [
+          `$ # ${name} — expert scenario @ ${t}`,
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} --audit --strict --target enterprise-lab`,
+          '[*] running 247 audit controls across 18 systems...',
+          '[ok] 184 PASS | 38 WARN | 21 FAIL | 4 UNKNOWN',
+          '$ # Triage the 21 failures',
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} failures --group-by control-family`,
+          '[!] Access Control (AC):    7 failures',
+          '[!] Audit & Accountability: 5 failures',
+          '[!] Configuration Mgmt:     6 failures',
+          '[!] Identification & Auth:  3 failures',
+          '$ # Root-cause analysis on the AC cluster',
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} root-cause --family AC --depth 4`,
+          '[*] tracing dependency graph...',
+          '[!] shared root cause: orphaned accounts from 2 legacy services',
+          '[!] recommendation: implement automated deprovisioning via SCIM',
+          '$ # Architect the fix',
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} plan --fix orphaned-accounts --strategy scim-automation`,
+          '[ok] remediation plan:',
+          '[ok]   - Phase 1: integrate SCIM provider (2 sprints)',
+          '[ok]   - Phase 2: dry-run reconciliation (1 sprint)',
+          '[ok]   - Phase 3: cutover + monitor (2 sprints)',
+          '$ # Document the new standard for the team',
+          `$ ${name.toLowerCase().replace(/\s+/g, '-')} doc --out docs/standards/orphaned-accounts.md`,
+          '[ok] standard drafted — submit for peer review',
+          '$ # Schedule the peer review session',
+          '$ # Mentor note: walk 2 engineers through this scenario next week'
+        ]
+      };
+    }
+    return { intro: `Simulation for ${escapeHtmlS(name)}.`, lines: [`$ # ${name}`] };
+  }
+
+  // =========================================================================
+  //  CERT VIEW — shown when a cert card is clicked.
+  //  Displays: full cert picture + description + issuer/date + VERIFY button
+  //  VERIFY button is the ONLY external navigation.
+  // =========================================================================
+  function certViewSim(cert, host) {
+    const issuerLogo = issuerLogoForCert(cert);
+    const issuerC = issuerCertif(cert);
+    host.innerHTML = `
+      <div class="cert-view-grid">
+        <div class="cert-view-image-block">
+          <div class="skill-modal-head">
+            <span class="skill-modal-name">certificate_image</span>
+            <span class="skill-modal-lvl" style="border-color:var(--neon-3);color:var(--neon-3)">VERIFIED</span>
+          </div>
+          <div class="cert-image-frame">
+            <img src="${issuerC}" alt="${escapeHtmlS(cert.title)} certificate image" loading="lazy" />
+            <div class="cert-image-corner ctc-tl"></div>
+            <div class="cert-image-corner ctc-tr"></div>
+            <div class="cert-image-corner ctc-bl"></div>
+            <div class="cert-image-corner ctc-br"></div>
+          </div>
+        </div>
+        <div class="cert-view-info-block">
+          <div class="skill-modal-head">
+            <span class="skill-modal-name">${escapeHtmlS(cert.title)}</span>
+          </div>
+          <div class="cert-view-issuer-row">
+            <img src="${issuerLogo}" alt="${escapeHtmlS(cert.issuer)} logo" class="cert-view-issuer-logo" loading="lazy" />
+            <div>
+              <div class="cv-issuer-name">${escapeHtmlS(cert.issuer)}</div>
+              <div class="cv-issue-date">Issued: ${escapeHtmlS(cert.date)}</div>
+            </div>
+          </div>
+          <div class="cert-view-desc">
+            <div class="cvd-label">// DESCRIPTION</div>
+            <p class="cvd-text">${escapeHtmlS(cert.blurb || 'No description available for this certification.')}</p>
+          </div>
+          <div class="cert-view-meta">
+            <div class="cvm-row">
+              <span class="cvm-key">RECIPIENT</span>
+              <span class="cvm-val">Souhaieb Marzouk</span>
+            </div>
+            <div class="cvm-row">
+              <span class="cvm-key">ISSUE_DATE</span>
+              <span class="cvm-val">${escapeHtmlS(cert.date)}</span>
+            </div>
+            <div class="cvm-row">
+              <span class="cvm-key">ISSUING_BODY</span>
+              <span class="cvm-val">${escapeHtmlS(cert.issuer)}</span>
+            </div>
+            <div class="cvm-row">
+              <span class="cvm-key">VERIFY_URL</span>
+              <span class="cvm-val" style="word-break:break-all;font-size:10px">${escapeHtmlS(cert.verifyUrl || '—')}</span>
+            </div>
+          </div>
+          <a class="cert-view-verify-btn" href="${escapeHtmlS(cert.verifyUrl || '#')}" target="_blank" rel="noopener noreferrer">
+            <span>VERIFY_CERTIFICATE</span>
+            <span class="arrow">↗</span>
+          </a>
+          <div class="sim-p" style="margin-top:10px;font-size:10px;color:var(--fg-dim);line-height:1.5">
+            // External verification link opens in a new tab.
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function issuerLogoForCert(cert) {
+    const m = {
+      htb:       'assets/issuer-logos/HTB-Logo.png',
+      comptia:   'assets/issuer-logos/Comptia-Logo.png',
+      tryhackme: 'assets/issuer-logos/THM-Logo.jpg',
+      google:    'assets/issuer-logos/Google-Logo.png',
+      atsqa:     'assets/issuer-logos/ATSQA-Logo.jpeg'
+    };
+    if (cert.issuerKey && m[cert.issuerKey]) return m[cert.issuerKey];
+    const byName = {
+      'HackTheBox':       'assets/issuer-logos/HTB-Logo.png',
+      'CompTIA':          'assets/issuer-logos/Comptia-Logo.png',
+      'TryHackMe':        'assets/issuer-logos/THM-Logo.jpg',
+      'Google / Coursera':'assets/issuer-logos/Google-Logo.png',
+      'AT*SQA':           'assets/issuer-logos/ATSQA-Logo.jpeg'
+    };
+    return byName[cert.issuer] || 'assets/issuer-logos/Google-Logo.png';
+  }
+  function issuerCertif(cert) {
+    const m = {
+      htb:       'assets/certificates/HTB-CDSA.png',
+      compnet:   'assets/certificates/Network+.png',
+      compsec:   'assets/certificates/Security+.png',
+      thm101: 'assets/certificates/Cyber-Security-101.png',
+      thmjrpentest: 'assets/certificates/Jr-PenTester.png',
+      thmsocl1: 'assets/certificates/SOC-L1.png',
+      thmsocl2: 'assets/certificates/SOC-L2.png',
+      google:    'assets/certificates/Google-Cybersecurity.png',
+      ctfl:     'assets/certificates/CTFL.png',
+      ctflat:     'assets/certificates/CTFL-AT.png'
+    };
+    if (cert.issuerKey && m[cert.issuerKey]) return m[cert.issuerKey];
+    const byName = {
+	  'HTB Certified Defensive Security Analyst (CDSA)':	'assets/certificates/HTB-CDSA.png',
+      'CompTIA Network+ (N10-009)':	'assets/certificates/Network+.png',
+      'CompTIA Security+ (SY0-701)':	'assets/certificates/Security+.png',
+      'Cyber Security 101':	'assets/certificates/Cyber-Security-101.png',
+      'Jr Penetration Tester':	'assets/certificates/Jr-PenTester.png',
+      'SOC Level 1':	'assets/certificates/SOC-L1.png',
+      'SOC Level 2':	'assets/certificates/SOC-L2.png',
+      'Google Cybersecurity Professional Certificate':	'assets/certificates/Google-Cybersecurity.png',
+      'ISTQB Certified Tester Foundation Level (CTFL)':	'assets/certificates/CTFL.png',
+      'ISTQB Certified Tester Foundation Level — Agile Tester (CTFL-AT)':	'assets/certificates/CTFL-AT.png'
+    };
+    return byName[cert.title] || 'assets/certificates/Google-Logo.png';
   }
 
   /* =================================================================
@@ -1139,19 +1490,55 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span>
       ctx = ctx || {};
       ctx.tabs = ctx.tabs || [];
 
+      // 1. CERT VIEW — clicking a certification card
+      if (key === '__cert_view__' && ctx.cert) {
+        certViewSim(ctx.cert, host);
+        return;
+      }
+
+      // 2. SKILL SIM — always produce 3 tabs (sources / radar / live-sim)
+      if (ctx.skill) {
+        const skill = ctx.skill;
+        const liveRenderer = (typeof key === 'string' && SKILL_SIMS[key]) ? SKILL_SIMS[key] : genericLiveSim;
+
+        // push 3 tabs
+        ctx.tabs.push(
+          { id: 'sources',  label: '// SOURCES' },
+          { id: 'radar',    label: '// PROFICIENCY' },
+          { id: 'live-sim', label: '// LIVE SIMULATION' }
+        );
+
+        // build 3 sections; live-sim section will be filled by the renderer
+        host.innerHTML = `
+          <div class="sim-section active" data-sim="sources">
+            ${renderSourcesSection(skill)}
+          </div>
+          <div class="sim-section" data-sim="radar">
+            ${renderRadarSection(skill)}
+          </div>
+          <div class="sim-section" data-sim="live-sim">
+            <!-- live sim renderer fills this in -->
+          </div>
+        `;
+
+        const liveHost = host.querySelector('[data-sim="live-sim"]');
+        if (liveHost) {
+          // Specific skill sims take only (host); genericLiveSim takes (skill, host)
+          if (liveRenderer === genericLiveSim) {
+            genericLiveSim(skill, liveHost);
+          } else {
+            liveRenderer(liveHost);
+          }
+        }
+        return;
+      }
+
+      // 3. EXPERIENCE / PROJECT simulations
       if (SIMS[key]) {
         SIMS[key](host, ctx);
         return;
       }
-      if (SKILL_SIMS[key]) {
-        SKILL_SIMS[key](host);
-        return;
-      }
-      // skill passed as object? detect via ctx.skill
-      if (ctx.skill) {
-        genericSkillSim(ctx.skill, host);
-        return;
-      }
+
       host.innerHTML = `<div class="sim-p">Simulation not configured for this entry. Add a renderer in <span class="code-inline">simulations.js</span> for key <span class="code-inline">${key}</span>.</div>`;
     }
   };
