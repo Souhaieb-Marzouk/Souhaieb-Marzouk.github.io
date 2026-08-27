@@ -277,37 +277,37 @@
     `;
 
     const renderGroup = (g) => {
-	  // Split group into two parallel sub-lists (vertically aligned)
-	  if (g.split && g.skills.length > 4) {
-		const mid = Math.ceil(g.skills.length / 2);
-		const left  = g.skills.slice(0, mid);
-		const right = g.skills.slice(mid);
-		return `
-		  <section class="skill-group skill-group-split">
-			<header class="skill-group-head">
-			  <span class="skill-group-icon">${g.icon}</span>
-			  <h3 class="skill-group-name">${escapeHtml(g.group)}</h3>
-			</header>
-			<div class="skill-split-grid">
-			  <ul class="skill-list">${left.map(s => renderItem(s, g.group)).join('')}</ul>
-			  <ul class="skill-list">${right.map(s => renderItem(s, g.group)).join('')}</ul>
-			</div>
-		  </section>
-		`;
-	  }
-	  // Standard single-list group
-	  return `
-		<section class="skill-group">
-		  <header class="skill-group-head">
-			<span class="skill-group-icon">${g.icon}</span>
-			<h3 class="skill-group-name">${escapeHtml(g.group)}</h3>
-		  </header>
-		  <ul class="skill-list">
-			${g.skills.map(s => renderItem(s, g.group)).join('')}
-		  </ul>
-		</section>
-	  `;
-	};
+          // Split group into two parallel sub-lists (vertically aligned)
+          if (g.split && g.skills.length > 4) {
+                const mid = Math.ceil(g.skills.length / 2);
+                const left  = g.skills.slice(0, mid);
+                const right = g.skills.slice(mid);
+                return `
+                  <section class="skill-group skill-group-split">
+                        <header class="skill-group-head">
+                          <span class="skill-group-icon">${g.icon}</span>
+                          <h3 class="skill-group-name">${escapeHtml(g.group)}</h3>
+                        </header>
+                        <div class="skill-split-grid">
+                          <ul class="skill-list">${left.map(s => renderItem(s, g.group)).join('')}</ul>
+                          <ul class="skill-list">${right.map(s => renderItem(s, g.group)).join('')}</ul>
+                        </div>
+                  </section>
+                `;
+          }
+          // Standard single-list group
+          return `
+                <section class="skill-group">
+                  <header class="skill-group-head">
+                        <span class="skill-group-icon">${g.icon}</span>
+                        <h3 class="skill-group-name">${escapeHtml(g.group)}</h3>
+                  </header>
+                  <ul class="skill-list">
+                        ${g.skills.map(s => renderItem(s, g.group)).join('')}
+                  </ul>
+                </section>
+          `;
+        };
 
     host.innerHTML = D.skills.map(renderGroup).join('');
   }
@@ -319,24 +319,37 @@
    *  - VERIFY_CERTIFICATE button stays external (in modal only).
    * ================================================================= */
   const ISSUER_LOGO_PATH = {
-    htb:	'assets/issuer-logos/HTB-Logo.png',
-    comptia:	'assets/issuer-logos/Comptia-Logo.png',
-    tryhackme:	'assets/issuer-logos/THM-Logo.jpg',
-    google:	'assets/issuer-logos/Google-Logo.png',
-    atsqa:	'assets/issuer-logos/ATSQA-Logo.jpeg'
+    htb:        'assets/issuer-logos/HTB-Logo.png',
+    comptia:    'assets/issuer-logos/Comptia-Logo.png',
+    tryhackme:  'assets/issuer-logos/THM-Logo.jpg',
+    google:     'assets/issuer-logos/Google-Logo.png',
+    atsqa:      'assets/issuer-logos/ATSQA-Logo.jpeg'
+  };
+
+  /* SVG fallbacks (used automatically when local PNG/JPG logos are absent) */
+  const ISSUER_LOGO_FALLBACK = {
+    'assets/issuer-logos/HTB-Logo.png':      'assets/issuer-logos/htb.svg',
+    'assets/issuer-logos/Comptia-Logo.png':  'assets/issuer-logos/comptia.svg',
+    'assets/issuer-logos/THM-Logo.jpg':      'assets/issuer-logos/tryhackme.svg',
+    'assets/issuer-logos/Google-Logo.png':   'assets/issuer-logos/google.svg',
+    'assets/issuer-logos/ATSQA-Logo.jpeg':   'assets/issuer-logos/atsqa.svg'
   };
 
   function issuerLogoSrc(c) {
     if (c.issuerKey && ISSUER_LOGO_PATH[c.issuerKey]) return ISSUER_LOGO_PATH[c.issuerKey];
     // Fallback map by issuer name
     const m = {
-      'HackTheBox':	'assets/issuer-logos/HTB-Logo.png',
-      'CompTIA':	'assets/issuer-logos/Comptia-Logo.png',
-      'TryHackMe':	'assets/issuer-logos/THM-Logo.jpg',
-      'Google / Coursera':	'assets/issuer-logos/Google-Logo.png',
-      'AT*SQA':	'assets/issuer-logos/ATSQA-Logo.jpeg'
+      'HackTheBox':     'assets/issuer-logos/HTB-Logo.png',
+      'CompTIA':        'assets/issuer-logos/Comptia-Logo.png',
+      'TryHackMe':      'assets/issuer-logos/THM-Logo.jpg',
+      'Google / Coursera':      'assets/issuer-logos/Google-Logo.png',
+      'AT*SQA': 'assets/issuer-logos/ATSQA-Logo.jpeg'
     };
     return m[c.issuer] || 'assets/issuer-logos/Google-Logo.png';
+  }
+
+  function issuerLogoFallback(src) {
+    return ISSUER_LOGO_FALLBACK[src] || 'assets/issuer-logos/google.svg';
   }
 
   function renderCerts() {
@@ -347,7 +360,7 @@
               aria-label="View certificate: ${escapeHtml(c.title)} — ${escapeHtml(c.issuer)} (${escapeHtml(c.date)})">
         <div class="cert-head">
           <div class="cert-logo">
-            <img src="${issuerLogoSrc(c)}" alt="${escapeHtml(c.issuer)} logo" loading="lazy" />
+            <img src="${issuerLogoSrc(c)}" alt="${escapeHtml(c.issuer)} logo" loading="lazy" onerror="this.onerror=null;this.src='${issuerLogoFallback(issuerLogoSrc(c))}'" />
           </div>
           <div class="cert-meta">
             <div class="cert-title">${escapeHtml(c.title)}</div>

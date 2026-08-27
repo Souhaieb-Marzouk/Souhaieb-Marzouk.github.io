@@ -22,6 +22,130 @@
   }
 
   /* =================================================================
+   *  SHARED VISUAL-SIM HELPERS
+   *  - makeTimers: per-sim timer registry auto-cleared on modal close
+   *  - vsLink: animated SVG link + SMIL packet flow between nodes
+   *    (nodes are positioned in %, stage SVG uses viewBox 0 0 1000 H
+   *     with preserveAspectRatio="none" so % and viewBox coords align)
+   *  - vsRunSteps: drives a .vs-steps list through running/pass states
+   * ================================================================= */
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function makeTimers(host) {
+    const timers = [];
+    const prev = host.__cleanup;
+    const api = {
+      later(fn, t) { const id = setTimeout(fn, t); timers.push(id); return id; },
+      every(fn, t) { const id = setInterval(fn, t); timers.push(id); return id; },
+      clear() { timers.forEach((id) => { clearTimeout(id); clearInterval(id); }); timers.length = 0; }
+    };
+    host.__cleanup = () => { api.clear(); if (prev) prev(); };
+    return api;
+  }
+
+  function vsInitSvg(stage, vbH) {
+    const svg = stage.querySelector('svg.vs-svg');
+    if (!svg) return null;
+    svg.setAttribute('viewBox', `0 0 1000 ${vbH}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    return svg;
+  }
+
+  function vsLink(svg, x1p, y1p, x2p, y2p, vbH, opts = {}) {
+    if (!svg) return null;
+    // build the point list (percentages → viewBox coords); optional waypoints
+    const P = (xp, yp) => [xp * 10, (yp * vbH) / 100];
+    const pts = [P(x1p, y1p)];
+    (opts.pts || []).forEach((w) => pts.push(P(w[0], w[1])));
+    pts.push(P(x2p, y2p));
+    const pathStr = 'M ' + pts.map((p) => `${p[0]} ${p[1]}`).join(' L ');
+
+    const line = document.createElementNS(SVG_NS, opts.pts && opts.pts.length ? 'polyline' : 'line');
+    if (opts.pts && opts.pts.length) {
+      line.setAttribute('points', pts.map((p) => `${p[0]},${p[1]}`).join(' '));
+    } else {
+      line.setAttribute('x1', pts[0][0]); line.setAttribute('y1', pts[0][1]);
+      line.setAttribute('x2', pts[1][0]); line.setAttribute('y2', pts[1][1]);
+    }
+    line.setAttribute('class', 'vs-link' + (opts.cls ? ' ' + opts.cls : ''));
+    line.setAttribute('fill', 'none');
+    svg.appendChild(line);
+
+    const g = document.createElementNS(SVG_NS, 'g');
+    svg.appendChild(g);
+    function addPackets(n, color, dur, r) {
+      for (let i = 0; i < n; i++) {
+        const c = document.createElementNS(SVG_NS, 'circle');
+        c.setAttribute('r', r || 3.5);
+        c.setAttribute('fill', color || 'var(--neon-3)');
+        c.setAttribute('opacity', '0');
+        const am = document.createElementNS(SVG_NS, 'animateMotion');
+        am.setAttribute('dur', (dur || 1.3) + 's');
+        am.setAttribute('repeatCount', 'indefinite');
+        am.setAttribute('path', pathStr);
+        am.setAttribute('begin', ((i * (dur || 1.3)) / n).toFixed(2) + 's');
+        c.appendChild(am);
+        const fade = document.createElementNS(SVG_NS, 'animate');
+        fade.setAttribute('attributeName', 'opacity');
+        fade.setAttribute('values', '0;1;1;0');
+        fade.setAttribute('dur', (dur || 1.3) + 's');
+        fade.setAttribute('repeatCount', 'indefinite');
+        fade.setAttribute('begin', ((i * (dur || 1.3)) / n).toFixed(2) + 's');
+        c.appendChild(fade);
+        g.appendChild(c);
+      }
+    }
+    const api = {
+      line, group: g,
+      packets(n, color, dur, r) {
+        while (g.firstChild) g.removeChild(g.firstChild);
+        addPackets(n, color, dur, r);
+        return api;
+      },
+      on()  { g.style.display = ''; return api; },
+      off() { g.style.display = 'none'; return api; },
+      activate()   { line.classList.add('active'); return api; },
+      deactivate() { line.classList.remove('active'); return api; }
+    };
+    if (opts.packets) addPackets(opts.packets, opts.color, opts.dur, opts.r);
+    if (opts.hidden) api.off();
+    if (opts.active) api.activate();
+    return api;
+  }
+
+  /* drives each .vs-step of a list; phases: [{ dur, run(), end(), fail }] */
+  function vsRunSteps(listEl, timers, phases) {
+    const items = Array.from((listEl || {}).querySelectorAll ? listEl.querySelectorAll('.vs-step') : []);
+    const failed = phases.map((p) => !!p.fail);
+    const stateOf = (j) => (failed[j] ? 'fail' : 'pass');
+    const labelOf = (j) => (failed[j] ? 'FAIL' : 'PASS');
+    const apply = (i, cls, state) => {
+      items.forEach((x, j) => {
+        x.className = 'vs-step ' + (j < i ? stateOf(j) : j === i ? cls : 'pending');
+        const st = x.querySelector('.vs-step-state');
+        if (st) st.textContent = j < i ? labelOf(j) : j === i ? state : 'QUEUED';
+      });
+    };
+    let t = 250;
+    phases.forEach((p, i) => {
+      const tRun = t;
+      timers.later(() => { apply(i, 'running', 'RUNNING'); if (p.run) p.run(); }, tRun);
+      t += p.dur;
+      const tEnd = t;
+      timers.later(() => {
+        failed[i] = !!p.fail;
+        items.forEach((x, j) => {
+          x.className = 'vs-step ' + (j <= i ? stateOf(j) : 'pending');
+          const st = x.querySelector('.vs-step-state');
+          if (st) st.textContent = j <= i ? labelOf(j) : 'QUEUED';
+        });
+        if (p.end) p.end();
+      }, tEnd);
+    });
+    return t; // total ms
+  }
+
+  /* =================================================================
    *  SIMULATION REGISTRY — each key is referenced from data.js
    * ================================================================= */
   const SIMS = {};
@@ -75,15 +199,49 @@
   }
 
   /* =================================================================
-   *  1. SOC HOME LAB (Independent Research period)
-   *     — Simulates a Splunk SIEM dashboard + Sigma rule viewer
+   *  1. SOC + PENTEST HOME LAB (Independent Research period)
+   *     Tab 1 — SOC & Pentest Lab Simulation: 4-VM topology with
+   *             animated lateral movement + Splunk detection panels
+   *     Tab 2 — Lab 02: Sigma rule
+   *     Tab 3 — Lab 03: Splunk SPL
+   *     Tab 4 — Lab 04: CyberGuardian — process scan → AI → report
+   *     Tab 5 — TryHackMe achievements
    * ================================================================= */
   SIMS['soc-homelab'] = (host, ctx) => {
+    const timers = makeTimers(host);
+    const THM_URL = (window.RESUME_DATA && window.RESUME_DATA.personal && window.RESUME_DATA.personal.contact && window.RESUME_DATA.personal.contact.tryhackme) || 'https://tryhackme.com/p/Souhaieb.M';
     host.innerHTML = `
-      <div class="sim-h">SECURITY OPERATIONS CENTER — HOME LAB</div>
-      <div class="sim-p">Reproducible 9-phase Active Directory attack chain detection environment: 2× Windows Server 2019 (DC + IIS Web), 1× Windows 10 Pro 22H2 victim, 1× Kali Linux 2026.1 attacker, Splunk Enterprise + Sysmon telemetry. The dashboard below is a live simulation of the detection pipeline.</div>
+      <div class="sim-h">SOC + PENTEST HOME LAB — 4-VM ATTACK & DETECTION ENVIRONMENT</div>
+      <div class="sim-p">How the lab was built and how the attack unfolds: 2× Windows Server 2019 (Domain Controller + IIS Web), 1× Windows 10 Pro 22H2 victim, 1× Kali Linux attacker — all on a VirtualBox host-only network (192.168.56.0/24). Splunk Enterprise collects Sysmon telemetry from every Windows VM. Watch the 9-phase attack chain execute: the attacker lands on the victim via a phishing macro, moves laterally to the DC over WinRM, while the purple telemetry links stream detections to Splunk.</div>
 
       <div class="sim-section active" data-sim="dashboard">
+        <div class="vm-stage" id="hl-stage">
+          <svg class="vs-svg"></svg>
+          <span class="vs-stage-label">VIRTUALBOX HOST-ONLY — 192.168.56.0/24</span>
+
+          <div class="vm-node" id="hl-kali" style="left:15%;top:30%">
+            <div class="vm-node-title"><span class="vm-ico">🐉</span>KALI 2026.1<span class="vm-led"></span></div>
+            <div class="vm-node-sub">attacker · .56.103<br>metasploit · Rubeus</div>
+          </div>
+
+          <div class="vm-node" id="hl-victim" style="left:45%;top:70%">
+            <div class="vm-node-title"><span class="vm-ico">🖥️</span>WIN10 PRO<span class="vm-led"></span></div>
+            <div class="vm-node-sub">victim · .56.101<br>Sysmon v15 + UF</div>
+          </div>
+
+          <div class="vm-node" id="hl-dc" style="left:80%;top:30%">
+            <div class="vm-node-title"><span class="vm-ico">🏰</span>SERVER 2019 DC<span class="vm-led"></span></div>
+            <div class="vm-node-sub">corp.local · .56.102<br>AD DS + IIS + Sysmon</div>
+          </div>
+		  
+		  <div class="vm-node" id="hl-splunk" style="left:80%;top:70%">
+            <div class="vm-node-title"><span class="vm-ico">📊</span>SPLUNK ENT.<span class="vm-led"></span></div>
+            <div class="vm-node-sub">SIEM · .56.50<br>index=main · Sysmon</div>
+          </div>
+
+          <div class="vs-phase-line" id="hl-phase">LAB READY — 4 VMs powered on, telemetry flowing to Splunk</div>
+        </div>
+
         <div class="siem-grid">
           <div class="siem-panel">
             <div class="siem-head"><span>SPLUNK EVENT STREAM — index=main sourcetype=WinEventLog:Sysmon</span><span class="blink" style="color:var(--neon)">●</span></div>
@@ -97,13 +255,14 @@
           </div>
         </div>
         <div style="margin-top:14px">
-          <div class="sim-h">ATTACK CHAIN — 9 PHASES (click to inspect detection)</div>
+          <div class="sim-h">ATTACK CHAIN — 9 PHASES (executed on the topology above)</div>
           <div class="attack-chain" id="chain-grid"></div>
         </div>
       </div>
 
       <div class="sim-section" data-sim="sigma">
         <div class="sim-h">SIGMA RULE — Scheduled Task Persistence (T1053.005)</div>
+        <div class="sim-p">One of the 9 Sigma rules authored for the lab — each rule maps to one phase of the attack chain and was validated by replaying the phase and confirming the detection fires in Splunk.</div>
         <pre class="code-viewer"><span class="k">title</span>: <span class="s">Scheduled Task Creation for Persistence</span>
 <span class="k">id</span>: <span class="s">4d5e6f7a-8b9c-0123-defa-234567890123</span>
 <span class="k">status</span>: <span class="s">production</span>
@@ -136,6 +295,7 @@
 
       <div class="sim-section" data-sim="spl">
         <div class="sim-h">SPLUNK SPL — Privilege Escalation: UAC Bypass via eventvwr.exe</div>
+        <div class="sim-p">Detection queries executed against the collected Sysmon telemetry — each query was validated by replaying the corresponding attack phase and confirming the expected events return.</div>
         <pre class="code-viewer"><span class="c"># Query 1 — Registry modification for UAC bypass (Sysmon Event ID 13)</span>
 index=main sourcetype=<span class="s">"WinEventLog:Sysmon"</span> EventCode=<span class="n">13</span> TargetObject=<span class="s">"*mscfile*"</span>
 | table _time, Message
@@ -148,10 +308,228 @@ index=main sourcetype=<span class="s">"WinEventLog:Sysmon"</span> EventCode=<spa
 index=main sourcetype=<span class="s">"WinEventLog:Security"</span> (EventCode=<span class="n">4656</span> OR EventCode=<span class="n">4663</span>) ObjectName=<span class="s">"*msfile*"</span>
 | table _time, Message</pre>
       </div>
+
+      <div class="sim-section" data-sim="cyberguardian">
+        <div class="sim-h">CYBERGUARDIAN — SCAN → AI ANALYSIS → FINAL REPORT</div>
+        <div class="sim-p">The fourth lab: my open-source malware detection tool. CyberGuardian first sweeps running processes (layer 1), correlates the hits with YARA rules, VirusTotal and network telemetry (layer 2), then hands the evidence to the AI engine (layer 3) which classifies the threat, maps it to MITRE ATT&CK and generates the final report (layer 4). The pipeline below replays a real triage.</div>
+
+        <div class="cg-pipe" id="cg-pipe">
+          <div class="cg-pstep" data-p="1"><span class="cg-pstep-ico">🔍</span>Process Scan</div>
+          <div class="cg-pstep" data-p="2"><span class="cg-pstep-ico">🧩</span>IOC Correlation</div>
+          <div class="cg-pstep" data-p="3"><span class="cg-pstep-ico">🤖</span>AI Analysis</div>
+          <div class="cg-pstep" data-p="4"><span class="cg-pstep-ico">📄</span>Final Report</div>
+        </div>
+
+        <div class="skill-modal-grid" style="margin-bottom:14px">
+          <div>
+            <div class="sim-h">LAYER 1 — PROCESS SWEEP (live)</div>
+            <div class="cg-proc">
+              <div class="cg-proc-row head">
+                <span>PID</span><span>PROCESS</span><span>YARA / VT</span><span>BEHAVIOR</span><span>VERDICT</span>
+              </div>
+              <div class="cg-proc-row" data-proc="1"><span>892</span><span>explorer.exe</span><span class="cg-dim">no match</span><span class="cg-dim">normal session</span><span class="cg-verdict" data-v>…</span></div>
+              <div class="cg-proc-row" data-proc="2"><span>1044</span><span>chrome.exe</span><span class="cg-dim">no match</span><span class="cg-dim">user browsing</span><span class="cg-verdict" data-v>…</span></div>
+              <div class="cg-proc-row" data-proc="3"><span>712</span><span>svchost.exe</span><span class="ioc">malware_generic_loader · VT 38/72</span><span>parent=spoolsv.exe ⚠</span><span class="cg-verdict" data-v>…</span></div>
+              <div class="cg-proc-row" data-proc="4"><span>4812</span><span>powershell.exe</span><span class="ioc">encoded_cmd · VT 12/92 (IP)</span><span>beacon → .56.103:443 ⚠</span><span class="cg-verdict" data-v>…</span></div>
+              <div class="cg-proc-row" data-proc="5"><span>3310</span><span>winlogon.exe</span><span class="cg-dim">no match</span><span class="cg-dim">system session</span><span class="cg-verdict" data-v>…</span></div>
+            </div>
+
+            <div class="sim-h" style="margin-top:12px">LAYER 2 — IOC CORRELATION</div>
+            <ul class="vs-steps">
+              <li class="vs-step fail"><span class="vs-step-ico">🧬</span><div class="vs-step-body"><b>YARA</b> — malware_generic_loader + mimikatz_signature matched in memory (PID 712)</div><span class="vs-step-state">HIT</span></li>
+              <li class="vs-step fail"><span class="vs-step-ico">🌐</span><div class="vs-step-body"><b>VirusTotal</b> — 38/72 engines flag the binary; C2 IP reputation 12/92 malicious</div><span class="vs-step-state">HIT</span></li>
+              <li class="vs-step fail"><span class="vs-step-ico">📡</span><div class="vs-step-body"><b>Network</b> — 60s beacon interval to 192.168.56.103:443, HTTP POST /check-in</div><span class="vs-step-state">HIT</span></li>
+            </ul>
+          </div>
+          <div>
+            <div class="sim-h">LAYER 3 — AI ANALYSIS</div>
+            <div class="cg-report">
+              <div class="cg-report-head">
+                <span class="cg-report-title">AI ENGINE</span>
+                <span style="display:flex;gap:5px;flex-wrap:wrap">
+                  <span class="stack-chip" style="border-color:var(--neon);color:var(--neon)">DeepSeek ✓</span>
+                  <span class="stack-chip">OpenAI</span>
+                  <span class="stack-chip">Gemini</span>
+                </span>
+              </div>
+              <div class="cg-report-sec show" style="margin-bottom:10px">
+                <h6>Evidence submitted</h6>
+                IFEO Debugger Injection · YARA: uac_bypass_eventvwr · VT 41/72 · C2 beacon 60s · lsass.dmp handle
+              </div>
+              <div class="cg-report-sec show">
+                <h6>Verdict</h6>
+                <div style="font-size:16px;font-family:var(--display);color:var(--neon-3);margin-bottom:4px" id="cg-verdict">analyzing…</div>
+                <div id="cg-verdict-sub" style="color:var(--fg-dim);font-size:11px">correlating 5 detection vectors…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sim-h">LAYER 4 — AI-GENERATED FINAL REPORT</div>
+        <div class="cg-report" id="cg-report">
+          <div class="cg-report-head">
+            <span class="cg-report-title">CYBERGUARDIAN — INCIDENT REPORT #CG-2026-0117</span>
+            <span class="jira-sev critical">MALICIOUS · 9.2/10</span>
+          </div>
+          <div class="cg-report-sec" data-sec="1">
+            <h6>Executive summary</h6>
+            Host WIN10-VICTIM (192.168.56.101) is compromised by a credential-stealing trojan delivered via a macro-enabled document. Two processes are actively malicious: a trojanized svchost.exe (PID 712) and a PowerShell beacon (PID 4812) communicating with a known-malicious C2 at 192.168.56.103.
+          </div>
+          <div class="cg-report-sec" data-sec="2">
+            <h6>Findings</h6>
+            F-01 — Malicious parent-child chain: spoolsv.exe → svchost.exe (T1055 process injection)<br>
+            F-02 — PowerShell network beacon, 60s interval to C2 :443 (T1071.001)<br>
+            F-03 — LSASS memory access — credential dump in progress (T1003.001)
+          </div>
+          <div class="cg-report-sec" data-sec="3">
+            <h6>MITRE ATT&CK mapping</h6>
+            T1055 · T1071.001 · T1003.001 · T1548.002 · T1059.001 — mapped automatically by the AI engine from the raw detection JSON.
+          </div>
+          <div class="cg-report-sec" data-sec="4">
+            <h6>Recommendations</h6>
+            Isolate the host from the network immediately · block 192.168.56.103 at the firewall · capture full memory with Volatility 3 · rotate all credentials used on the host · hunt the same YARA signatures across the fleet.
+          </div>
+          <div class="cg-report-sec" data-sec="5">
+            <h6>IOC list</h6>
+            sha256: 4f8c…e201 · C2: 192.168.56.103:443 · persistence: HKCU\\…\\mscfile\\shell\\open\\command · task: \\SystemHealthMonitor
+          </div>
+        </div>
+      </div>
+
+      <div class="sim-section" data-sim="thm">
+        <div class="sim-h">TRYHACKME — LEARNING & ACHIEVEMENTS</div>
+        <div class="sim-p">400+ hands-on rooms completed across blue and red team paths (global top 1%), 50+ CTF challenges, and four completed certification paths. Selected achievements below — full room history on the profile.</div>
+
+        <div class="kpi-strip">
+          <div class="kpi-box"><div class="kpi-box-val">400+</div><div class="kpi-box-lbl">Rooms completed</div></div>
+          <div class="kpi-box"><div class="kpi-box-val alert">TOP 1%</div><div class="kpi-box-lbl">Global rank</div></div>
+          <div class="kpi-box"><div class="kpi-box-val">50+</div><div class="kpi-box-lbl">CTF challenges</div></div>
+          <div class="kpi-box"><div class="kpi-box-val">4</div><div class="kpi-box-lbl">Certified paths</div></div>
+        </div>
+
+        <div class="sim-h">CERTIFIED LEARNING PATHS</div>
+        <div class="thm-paths">
+          <div class="thm-path">
+            <div class="thm-path-head">
+              <span class="thm-path-name">🛡️ SOC Level 1</span>
+              <span class="thm-path-cert">CERTIFIED 2024</span>
+            </div>
+            <div class="thm-bar"><div class="thm-bar-fill" data-thm-fill="100"></div></div>
+            <div class="thm-path-sub">triage · log analysis · SIEM · incident response</div>
+          </div>
+          <div class="thm-path">
+            <div class="thm-path-head">
+              <span class="thm-path-name">🛡️ SOC Level 2</span>
+              <span class="thm-path-cert">CERTIFIED 2025</span>
+            </div>
+            <div class="thm-bar"><div class="thm-bar-fill" data-thm-fill="100"></div></div>
+            <div class="thm-path-sub">threat hunting · detection engineering · malware analysis</div>
+          </div>
+          <div class="thm-path">
+            <div class="thm-path-head">
+              <span class="thm-path-name">⚔️ Jr Penetration Tester</span>
+              <span class="thm-path-cert">CERTIFIED 2023</span>
+            </div>
+            <div class="thm-bar"><div class="thm-bar-fill" data-thm-fill="100"></div></div>
+            <div class="thm-path-sub">web exploitation · privilege escalation · network attacks</div>
+          </div>
+          <div class="thm-path">
+            <div class="thm-path-head">
+              <span class="thm-path-name">🔐 Cyber Security 101</span>
+              <span class="thm-path-cert">CERTIFIED 2024</span>
+            </div>
+            <div class="thm-bar"><div class="thm-bar-fill" data-thm-fill="100"></div></div>
+            <div class="thm-path-sub">core principles · Linux &amp; Windows fundamentals · networking</div>
+          </div>
+        </div>
+
+        <div class="sim-h">REPRESENTATIVE ROOMS COMPLETED <span style="color:var(--fg-dim);text-transform:none;letter-spacing:0">(of 400+)</span></div>
+        <div class="thm-rooms">
+          <div class="thm-room"><span class="done-ico">✓</span>Wireshark 101</div>
+          <div class="thm-room"><span class="done-ico">✓</span>Nmap</div>
+          <div class="thm-room"><span class="done-ico">✓</span>Yara</div>
+          <div class="thm-room"><span class="done-ico">✓</span>Kerberoasting</div>
+          <div class="thm-room"><span class="done-ico">✓</span>Windows Forensics 1</div>
+          <div class="thm-room"><span class="done-ico">✓</span>Linux Forensics</div>
+          <div class="thm-room"><span class="done-ico">✓</span>OWASP Top 10</div>
+          <div class="thm-room"><span class="done-ico">✓</span>SQL Injection</div>
+          <div class="thm-room"><span class="done-ico">✓</span>Cross-Site Scripting</div>
+          <div class="thm-room"><span class="done-ico">✓</span>Hydra</div>
+          <div class="thm-room"><span class="done-ico">✓</span>John The Ripper</div>
+          <div class="thm-room"><span class="done-ico">✓</span>Burp Suite: The Basics</div>
+          <div class="thm-room"><span class="done-ico">✓</span>Intro to Malware Analysis</div>
+          <div class="thm-room"><span class="done-ico">✓</span>MITRE</div>
+          <div class="thm-room"><span class="done-ico">✓</span>File Inclusion</div>
+          <div class="thm-room"><span class="done-ico">✓</span>SSRF</div>
+          <div class="thm-room"><span class="done-ico">✓</span>Red Team Recon</div>
+          <div class="thm-room"><span class="done-ico">✓</span>Password Attacks</div>
+        </div>
+
+        <div class="sim-h" style="margin-top:14px">SKILLS PRACTISED ACROSS THE ROOMS</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:10px">
+          ${['Log Analysis','Splunk','Wireshark','tcpdump','Nmap','Burp Suite','OWASP Top 10','Active Directory Attacks','Kerberoasting','Hash Cracking','Phishing Analysis','Digital Forensics','Memory Forensics','Malware Analysis','YARA','Privilege Escalation','Web App Pentesting','CTF'].map(s => `<span class="stack-chip">${s}</span>`).join('')}
+        </div>
+
+        <div style="margin-top:16px;text-align:center">
+          <a class="btn-sim" href="${THM_URL}" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none">
+            <span class="blink">▸</span> VIEW_FULL_PROFILE_ON_TRYHACKME
+          </a>
+        </div>
+      </div>
     `;
 
-    // attach tabs to modal-tabs (handled in main.js openModal)
-    // build KPIs
+    /* ---- Tab 1: VM topology + lateral movement animation ---- */
+    const stage = $('#hl-stage', host);
+    const svg = vsInitSvg(stage, 280);
+    const VB = 280;
+    const kaliNode = $('#hl-kali', host), victimNode = $('#hl-victim', host),
+          dcNode = $('#hl-dc', host), splunkNode = $('#hl-splunk', host);
+    const linkKali  = vsLink(svg, 12, 28, 42, 72, VB, { cls: 'attack', hidden: true });
+    const linkLateral = vsLink(svg, 42, 72, 74, 28, VB, { cls: 'attack', hidden: true });
+    const linkTelV = vsLink(svg, 42, 72, 74, 82, VB, { cls: 'telemetry active' });
+    // route DC→Splunk around the right side so the link is never hidden behind the boxes
+    const linkTelD = vsLink(svg, 74, 28, 74, 82, VB, { cls: 'telemetry active', pts: [[93, 28], [93, 82]] });
+    const phaseLine = $('#hl-phase', host);
+
+    function playLab() {
+      // reset
+      kaliNode.className = 'vm-node'; victimNode.className = 'vm-node';
+      dcNode.className = 'vm-node'; splunkNode.className = 'vm-node';
+      [linkKali, linkLateral].forEach((l) => { if (l) { l.off(); l.deactivate(); } });
+      if (linkTelV) linkTelV.packets(2, 'var(--neon-5)', 2.0).on();
+      if (linkTelD) linkTelD.packets(2, 'var(--neon-5)', 2.0).on();
+      phaseLine.innerHTML = 'LAB READY — 4 VMs powered on, telemetry flowing to Splunk';
+
+      const seq = [
+        { t: 1200, run() {
+            phaseLine.innerHTML = '<span class="warn">PHASE 01-02/09 — INITIAL ACCESS + EXECUTION: phishing invoice.xlsm → VBA macro → PowerShell IEX cradle on VICTIM</span>';
+            kaliNode.className = 'vm-node active';
+            victimNode.className = 'vm-node hit';
+            if (linkKali) linkKali.activate().packets(4, 'var(--neon-3)', 1.1).on();
+          } },
+        { t: 4200, run() {
+            phaseLine.innerHTML = '<span class="warn">PHASE 03-05/09 — ENUMERATION + PRIV-ESC + PERSISTENCE on VICTIM (Rubeus kerberoast · eventvwr UAC bypass · scheduled task)</span>';
+          } },
+        { t: 7400, run() {
+            phaseLine.innerHTML = '<span class="err">PHASE 06/09 — LATERAL MOVEMENT: WinRM → Domain Controller 192.168.56.10 (Pass-the-Ticket)</span>';
+            dcNode.className = 'vm-node active';
+            if (linkLateral) linkLateral.activate().packets(4, 'var(--neon-3)', 1.3).on();
+          } },
+        { t: 10600, run() {
+            phaseLine.innerHTML = '<span class="err">PHASE 07-09/09 — C2 BEACON + DC PERSISTENCE + LSASS DUMP: svchost_updater.exe · malicious service · ProcDump -ma lsass.dmp</span>';
+            dcNode.className = 'vm-node hit';
+          } },
+        { t: 13800, run() {
+            phaseLine.innerHTML = 'ALL 9 PHASES EXECUTED — every phase detected by Sigma + Splunk SPL (see Labs 02 &amp; 03) — full IR documentation per phase';
+            splunkNode.className = 'vm-node active';
+          } }
+      ];
+      seq.forEach((s) => timers.later(s.run, s.t));
+      timers.later(() => playLab(), 18500); // loop
+    }
+    playLab();
+
+    /* ---- Tab 1: KPIs, heatmap, chain, log stream ---- */
     const kpiData = [
       { val: '14', lbl: 'CRITICAL', cls: 'alert' },
       { val: '37', lbl: 'WARNINGS' },
@@ -184,7 +562,7 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span> (EventCode=<
     });
     heat.appendChild(heatGrid);
 
-    // attack chain
+    // attack chain (in sync with the topology animation)
     const chain = [
       { no: '01', name: 'Initial Access', tool: 'invoice.xlsm (VBA macro)', tactic: 'T1566.001' },
       { no: '02', name: 'Execution',       tool: 'PowerShell IEX cradle', tactic: 'T1059.001' },
@@ -197,13 +575,21 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span> (EventCode=<
       { no: '09', name: 'Credential Dump', tool: 'ProcDump -ma lsass.dmp', tactic: 'T1003.001' }
     ];
     const chainGrid = $('#chain-grid', host);
-    chain.forEach((c, i) => {
+    function playChain() {
+      const nodes = $$('.chain-node', chainGrid);
+      nodes.forEach((n) => n.classList.remove('active', 'done'));
+      chain.forEach((c, i) => {
+        timers.later(() => { nodes[i].classList.add('active'); }, 400 + i * 1500);
+        timers.later(() => { if (nodes[i]) { nodes[i].classList.remove('active'); nodes[i].classList.add('done'); } }, 400 + i * 1500 + 1300);
+      });
+    }
+    chain.forEach((c) => {
       const node = el('div', 'chain-node');
       node.innerHTML = `<div class="chain-no">PHASE ${c.no}</div><div class="chain-name">${c.name}</div><div class="chain-tool">▸ ${c.tool}</div><div class="chain-tactic">${c.tactic}</div>`;
       chainGrid.appendChild(node);
-      setTimeout(() => node.classList.add('active'), 400 + i * 220);
-      setTimeout(() => { node.classList.remove('active'); node.classList.add('done'); }, 400 + i * 220 + 1200);
     });
+    playChain();
+    timers.later(() => playChain(), 18500); // in sync with topology loop
 
     // log stream
     const stream = $('#siem-stream', host);
@@ -223,56 +609,248 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span> (EventCode=<
       const [lvl, txt] = logTemplates[li % logTemplates.length];
       const line = el('div', `siem-log-line ${lvl}`, txt);
       stream.appendChild(line);
-      // keep last 14 lines
       const all = $$('.siem-log-line', stream);
       if (all.length > 14) all[0].remove();
       li++;
     }
     pushLog(); pushLog(); pushLog();
-    const logInt = setInterval(pushLog, 1400);
-    // cleanup on close handled by modal lifecycle
-    host.__cleanup = () => clearInterval(logInt);
+    timers.every(pushLog, 1400);
+
+    /* ---- Tab 4: CyberGuardian lab pipeline ---- */
+    function playCyberguardian() {
+      const pipeSteps = $$('#cg-pipe .cg-pstep', host);
+      pipeSteps.forEach((s) => s.classList.remove('active', 'done'));
+      const procRows = $$('.cg-proc-row[data-proc]', host);
+      procRows.forEach((r) => { r.classList.remove('scanning', 'flag', 'clean'); const v = $('[data-v]', r); if (v) v.textContent = '…'; });
+      const verdict = $('#cg-verdict', host), verdictSub = $('#cg-verdict-sub', host);
+      if (verdict) { verdict.textContent = 'analyzing…'; verdict.style.color = ''; }
+      if (verdictSub) verdictSub.textContent = 'correlating 5 detection vectors…';
+      const reportSecs = $$('#cg-report .cg-report-sec', host);
+      reportSecs.forEach((s) => s.classList.remove('show'));
+
+      // step 1: process sweep
+      timers.later(() => pipeSteps[0] && pipeSteps[0].classList.add('active'), 300);
+      procRows.forEach((row, i) => {
+        timers.later(() => row.classList.add('scanning'), 500 + i * 700);
+        timers.later(() => {
+          row.classList.remove('scanning');
+          const isFlag = i === 2 || i === 3;
+          row.classList.add(isFlag ? 'flag' : 'clean');
+          const v = $('[data-v]', row);
+          if (v) v.textContent = isFlag ? 'MALICIOUS' : 'CLEAN';
+        }, 500 + i * 700 + 550);
+      });
+      const tSweepEnd = 500 + procRows.length * 700 + 600;
+      timers.later(() => { if (pipeSteps[0]) { pipeSteps[0].classList.remove('active'); pipeSteps[0].classList.add('done'); } pipeSteps[1] && pipeSteps[1].classList.add('active'); }, tSweepEnd);
+
+      // step 2+3: IOC + AI
+      timers.later(() => { if (pipeSteps[1]) { pipeSteps[1].classList.remove('active'); pipeSteps[1].classList.add('done'); } if (pipeSteps[2]) pipeSteps[2].classList.add('active'); }, tSweepEnd + 1800);
+      timers.later(() => {
+        if (verdict) { verdict.textContent = 'MALICIOUS — 94.7% confidence'; verdict.style.color = 'var(--neon-3)'; }
+        if (verdictSub) verdictSub.textContent = 'Trojan.CredStealer · risk 9.2/10 · MITRE: T1055 · T1071.001 · T1003.001 · T1548.002';
+      }, tSweepEnd + 3600);
+      timers.later(() => { if (pipeSteps[2]) { pipeSteps[2].classList.remove('active'); pipeSteps[2].classList.add('done'); } if (pipeSteps[3]) pipeSteps[3].classList.add('active'); }, tSweepEnd + 4000);
+
+      // step 4: report sections appear
+      reportSecs.forEach((s, i) => {
+        timers.later(() => s.classList.add('show'), tSweepEnd + 4300 + i * 800);
+      });
+      const total = tSweepEnd + 4300 + reportSecs.length * 800;
+      timers.later(() => { if (pipeSteps[3]) { pipeSteps[3].classList.remove('active'); pipeSteps[3].classList.add('done'); } }, total);
+
+      timers.later(() => playCyberguardian(), total + 5000); // loop
+    }
+    playCyberguardian();
+
+    /* ---- Tab 5: TryHackMe path bars animate ---- */
+    timers.later(() => {
+      $$('.thm-bar-fill', host).forEach((f) => {
+        f.style.width = f.getAttribute('data-thm-fill') + '%';
+      });
+    }, 400);
 
     // build tab nav
     ctx.tabs = [
-      { id: 'dashboard', label: '// SIEM Dashboard' },
-      { id: 'sigma',     label: '// Sigma Rule' },
-      { id: 'spl',       label: '// Splunk SPL' }
+      { id: 'dashboard',    label: '// SOC & Pentest Lab Simulation' },
+      { id: 'sigma',        label: '// Lab 02 — Sigma Rule' },
+      { id: 'spl',          label: '// Lab 03 — Splunk SPL' },
+      { id: 'cyberguardian', label: '// Lab 04 — CyberGuardian + AI' },
+      { id: 'thm',          label: '// TryHackMe Achievements' }
     ];
+  };
+
+  /* homelab-attack-chain (project entry) reuses the soc-homelab renderer */
+  SIMS['homelab-attack-chain'] = (host, ctx) => {
+    SIMS['soc-homelab'](host, ctx);
   };
 
   /* =================================================================
    *  2. LIBERTYGLOBAL — Gateway Validation & SSH Finding
+   *     Tab 1: visual SSH takeover replay (attacker → XGS-PON gateway
+   *            → home network) with animated attack steps & device state
+   *     Tab 2: two Jira tickets with steps-to-reproduce
+   *     Tab 3: validation metrics
    * ================================================================= */
   SIMS['libertyglobal-soc'] = (host, ctx) => {
+    const timers = makeTimers(host);
     host.innerHTML = `
       <div class="sim-h">LIBERTYGLOBAL — GATEWAY VALIDATION & SECURITY TESTING</div>
-      <div class="sim-p">Anomaly-driven security testing across LibertyGlobal's production DOCSIS, RDK-B, XGS-PON and VoIP infrastructure. The terminal below reconstructs the discovery, validation, and remediation cycle of the Critical-rated SSH remote-access finding on the XGS-PON product line.</div>
+      <div class="sim-p">Anomaly-driven security testing across LibertyGlobal's production DOCSIS, RDK-B, XGS-PON and VoIP infrastructure. This replay reconstructs the discovery of the Critical-rated SSH finding on the XGS-PON product line: a remote attacker logs into the gateway over SSH with the default GUI credentials and takes full control — no confirmation prompts, admin-equivalent rights, customer locked out.</div>
 
-      <div class="sim-section active" data-sim="terminal">
-        <div class="term" id="lg-term"></div>
+      <div class="sim-section active" data-sim="attack">
+        <div class="kpi-strip">
+          <div class="kpi-box"><div class="kpi-box-val" id="lg-steps-v">0/7</div><div class="kpi-box-lbl">Attack steps done</div></div>
+          <div class="kpi-box"><div class="kpi-box-val alert" id="lg-priv">—</div><div class="kpi-box-lbl">Privilege obtained</div></div>
+          <div class="kpi-box"><div class="kpi-box-val" id="lg-conf">0</div><div class="kpi-box-lbl">Confirmations asked</div></div>
+          <div class="kpi-box"><div class="kpi-box-val alert" id="lg-cvss">CVSS 8.4</div><div class="kpi-box-lbl">Severity — CRITICAL</div></div>
+        </div>
+
+        <div class="vs-stage" id="lg-stage" style="min-height:270px">
+          <svg class="vs-svg"></svg>
+          <span class="vs-stage-label">XGS-PON HOME LAB — GATEWAY 192.168.1.1 · FW v3.6.9</span>
+
+          <div class="vs-node attacker" id="lg-atk" style="left:10%;top:50%">
+            <span class="vs-led"></span>
+            <span class="vs-node-ico">🏴‍☠️</span>
+            <div class="vs-node-title">ATTACKER</div>
+            <div class="vs-node-sub" id="lg-atk-sub">Kali · 192.168.1.100<br>putty.exe → SSH :22</div>
+          </div>
+
+          <div class="vs-node on" id="lg-gw" style="left:50%;top:50%">
+            <span class="vs-led"></span>
+            <span class="vs-node-ico">📡</span>
+            <div class="vs-node-title">XGS-PON GATEWAY</div>
+            <div class="vs-node-sub" id="lg-gw-sub">192.168.1.1 · SSH ON<br>state: ONLINE</div>
+          </div>
+
+          <div class="vs-node on" id="lg-v1" style="left:87%;top:20%">
+            <span class="vs-led"></span>
+            <span class="vs-node-ico">💻</span>
+            <div class="vs-node-title">HOME LAPTOP</div>
+            <div class="vs-node-sub" id="lg-v1-sub">WiFi connected<br>internet OK ✓</div>
+          </div>
+
+          <div class="vs-node on" id="lg-v2" style="left:87%;top:78%">
+            <span class="vs-led"></span>
+            <span class="vs-node-ico">📱</span>
+            <div class="vs-node-title">FAMILY PHONES</div>
+            <div class="vs-node-sub" id="lg-v2-sub">WiFi connected<br>internet OK ✓</div>
+          </div>
+
+          <div class="vs-phase-line" id="lg-phase">t+0s — attacker scans the home network segment</div>
+        </div>
+
+        <div class="skill-modal-grid">
+          <div>
+            <div class="sim-h">ATTACK CHAIN — STEP BY STEP</div>
+            <ul class="vs-steps" id="lg-steps">
+              <li class="vs-step pending"><span class="vs-step-ico">🔎</span><div class="vs-step-body"><b>Recon</b> — port scan from LAN: <span class="code-inline">nmap -p22 192.168.1.0/24</span> → SSH open on gateway</div><span class="vs-step-state">QUEUED</span></li>
+              <li class="vs-step pending"><span class="vs-step-ico">🔑</span><div class="vs-step-body"><b>Default credentials</b> — <span class="code-inline">ssh admin@192.168.1.1</span> with GUI default admin/admin → session opened</div><span class="vs-step-state">QUEUED</span></li>
+              <li class="vs-step pending"><span class="vs-step-ico">📜</span><div class="vs-step-body"><b>Reconnaissance</b> — <span class="code-inline">show running-config</span> → access-level: FULL — admin-equivalent shell</div><span class="vs-step-state">QUEUED</span></li>
+              <li class="vs-step pending"><span class="vs-step-ico">🔄</span><div class="vs-step-body"><b>Destructive #1</b> — <span class="code-inline">reboot</span> executes instantly, NO confirmation prompt — gateway restarts</div><span class="vs-step-state">QUEUED</span></li>
+              <li class="vs-step pending"><span class="vs-step-ico">⚠️</span><div class="vs-step-body"><b>Destructive #2</b> — <span class="code-inline">restore defaults</span> — factory reset wipes customer configuration</div><span class="vs-step-state">QUEUED</span></li>
+              <li class="vs-step pending"><span class="vs-step-ico">📡</span><div class="vs-step-body"><b>WiFi hijack</b> — <span class="code-inline">set wifi ssid FreeWiFi password stolen123</span> — home network renamed &amp; re-keyed</div><span class="vs-step-state">QUEUED</span></li>
+              <li class="vs-step pending"><span class="vs-step-ico">🔒</span><div class="vs-step-body"><b>Lockout</b> — <span class="code-inline">set gui-password</span> + <span class="code-inline">set ssh-password</span> — customer locked out of own gateway</div><span class="vs-step-state">QUEUED</span></li>
+            </ul>
+          </div>
+          <div>
+            <div class="sim-h">GATEWAY STATE MONITOR</div>
+            <div class="cg-report" style="min-height:100%">
+              <div class="cg-report-head">
+                <span class="cg-report-title">XGS-PON · 192.168.1.1</span>
+                <span class="jira-sev critical" id="lg-badge" style="display:none">UNDER ATTACK</span>
+              </div>
+              <div class="cg-report-sec show" style="margin-bottom:10px">
+                <h6>Current state</h6>
+                <div id="lg-state-line" style="font-size:14px;color:var(--fg);font-family:var(--mono)">ONLINE — normal operation</div>
+              </div>
+              <div class="cg-report-sec show" style="margin-bottom:10px">
+                <h6>Management plane</h6>
+                <div id="lg-mgmt-line">GUI: user password · SSH: admin (default creds) · TR-069: ACS</div>
+              </div>
+              <div class="cg-report-sec show" style="margin-bottom:10px">
+                <h6>Confirmation prompts</h6>
+                <div id="lg-conf-line">reboot: none · factory reset: none · wifi change: none</div>
+              </div>
+              <div class="cg-report-sec show">
+                <h6>Customer impact</h6>
+                <div id="lg-impact-line">none</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="sim-section" data-sim="finding">
-        <div class="sim-h">JIRA TICKET — CRITICAL FINDING #XGS-2021-0144</div>
-        <div class="skill-modal-block" style="margin-bottom:12px">
-          <div class="sim-p" style="margin:0">
-            <strong style="color:var(--neon)">Product:</strong> XGS-PON Gateway (LibertyGlobal broadband)<br>
-            <strong style="color:var(--neon)">Vulnerability:</strong> SSH Remote Access enabled by default with admin-equivalent GUI password<br>
-            <strong style="color:var(--neon-3)">CVSS:</strong> 8.4 (Critical)<br>
-            <strong style="color:var(--neon-2)">Tool used:</strong> PuTTY (SSH client)<br>
-            <strong style="color:var(--fg)">Reproducibility:</strong> Always reproducible on factory-firmware
+        <div class="sim-h">JIRA — TWO CRITICAL FINDINGS FROM THE XGS-PON PRODUCT LINE</div>
+        <div class="sim-p">Both tickets include reproducible steps and were validated on factory firmware before the release gate; remediation shipped in firmware v3.7.2.</div>
+        <div class="jira-grid">
+          <div class="jira-ticket">
+            <div class="jira-head">
+              <span class="jira-id">XGS-2021-0144</span>
+              <span class="jira-sev critical">CRITICAL · CVSS 8.4</span>
+            </div>
+            <div class="jira-body">
+              <div class="jira-meta">
+                <b>Product:</b> XGS-PON Gateway (LibertyGlobal broadband)<br>
+                <b>Type:</b> Access control / privilege escalation<br>
+                <b>Tool:</b> PuTTY (SSH client) · <b>Reproducibility:</b> always on factory firmware
+              </div>
+              <h5>Description</h5>
+              SSH remote access is enabled by default and accepts the admin-equivalent GUI default credentials — full unauthenticated remote control of the gateway without any user interaction.
+              <h5>Steps to Reproduce</h5>
+              <ol class="jira-steps">
+                <li>Reset the XGS-PON gateway to factory firmware (v3.6.9)</li>
+                <li>From a LAN host, connect with PuTTY: <span class="code-inline">ssh admin@192.168.1.1</span></li>
+                <li>Authenticate with the GUI default credentials (admin/admin) — session opens</li>
+                <li>Run <span class="code-inline">show running-config</span> → access-level: full (admin-equivalent)</li>
+                <li>Run <span class="code-inline">reboot</span> then <span class="code-inline">restore defaults</span> — both execute with no confirmation prompt</li>
+                <li>Run <span class="code-inline">set wifi ssid … password …</span> and <span class="code-inline">set gui-password …</span> — WiFi hijacked and customer locked out</li>
+              </ol>
+              <h5>Impact</h5>
+              Full unauthenticated remote takeover: interface enumeration, reboot, factory restore, WiFi re-configuration, GUI/SSH password change — admin-equivalent access with zero user interaction.
+              <h5>Remediation (shipped in v3.7.2)</h5>
+              <ul class="jira-rem">
+                <li>SSH remote access <b style="color:var(--neon)">deactivated by default</b> — opt-in only</li>
+                <li>SSH requires a user-set password (never the GUI default)</li>
+                <li>SSH session is <b style="color:var(--neon)">read-only</b> — no admin-equivalent rights</li>
+                <li>Admin operations moved to GUI + CLI with separate audit logging</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="jira-ticket">
+            <div class="jira-head">
+              <span class="jira-id">XGS-2022-0231</span>
+              <span class="jira-sev critical">HIGH · CVSS 7.4</span>
+            </div>
+            <div class="jira-body">
+              <div class="jira-meta">
+                <b>Product:</b> XGS-PON Gateway — WiFi interface<br>
+                <b>Type:</b> Cryptographic downgrade (WPA2/WPA3)<br>
+                <b>Tool:</b> Wireshark + wpa_supplicant · <b>Reproducibility:</b> 100% on 2.4G &amp; 5G SSIDs
+              </div>
+              <h5>Description</h5>
+              The default SSID is configured in WPA2/WPA3 "transition mode" without PMF enforcement: WPA3-SAE clients silently downgrade to WPA2-PSK, exposing the pre-shared key to offline dictionary attacks.
+              <h5>Steps to Reproduce</h5>
+              <ol class="jira-steps">
+                <li>Boot the gateway with factory WiFi configuration</li>
+                <li>Start Wireshark monitor-mode capture on channel of SSID <span class="code-inline">LibertyGlobal-Home</span></li>
+                <li>Associate a WPA3-SAE-capable client (wpa_supplicant, sae_groups=19)</li>
+                <li>Observe the handshake: SAE Commit → <b>no SAE Confirm</b> → client falls back to WPA2 4-way handshake</li>
+                <li>Capture the 4-way handshake → confirm PMK derives from the (weak) PSK — offline crack feasible</li>
+              </ol>
+              <h5>Impact</h5>
+              Attacker within radio range captures the WPA2 handshake and performs an offline dictionary attack against the default PSK — full WiFi access, then LAN access to every home device.
+              <h5>Remediation</h5>
+              <ul class="jira-rem">
+                <li>WPA3-SAE-only mode enforced (PMF required) — transition mode removed</li>
+                <li>Default PSK replaced by per-installation random passphrase</li>
+                <li>WiFi security regression test added to the pre-release gate</li>
+              </ul>
+            </div>
           </div>
         </div>
-        <div class="sim-h">IMPACT</div>
-        <div class="sim-p">Full unauthenticated remote control of the gateway: attacker can fetch all interfaces, perform reboot, factory restore, change WiFi configuration, change GUI/SSH password — admin-equivalent access without any user interaction.</div>
-        <div class="sim-h">REMEDIATION (implemented by Dev team)</div>
-        <ul style="list-style:none;padding:0;font-size:12px;color:var(--fg-soft);line-height:1.7">
-          <li>▸ SSH remote access <strong style="color:var(--neon)">deactivated by default</strong> — opt-in only</li>
-          <li>▸ SSH session requires user-set password (not the GUI default)</li>
-          <li>▸ SSH session is now <strong style="color:var(--neon)">read-only</strong> — no admin-equivalent rights</li>
-          <li>▸ All admin operations moved to GUI + CLI with separate audit logging</li>
-        </ul>
       </div>
 
       <div class="sim-section" data-sim="metrics">
@@ -290,48 +868,135 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span> (EventCode=<
       </div>
     `;
 
-    const lines = [
-      '$ ssh admin@192.168.1.1 -p 22',
-      '> Connecting to XGS-PON gateway 192.168.1.1...',
-      '> Auth method: password (using GUI default: admin/admin)',
-      '> Authenticated successfully — SSH session opened',
-      '$ show interfaces',
-      '[XGS-PON]  PON:  up, link 2.5 Gbps, OLT=10.20.30.40',
-      '[WAN]      eth0: up, DHCP 84.0.0.42/24',
-      '[LAN]      eth1: up, 192.168.1.1/24',
-      '[WiFi]    wlan0: up, ssid=LibertyGlobal-Home, WPA2-PSK',
-      '$ show running-config | include admin',
-      'admin password admin',
-      'admin access-level full',
-      '$ reboot',
-      'CRITICAL: gateway rebooting without any confirmation prompt!',
-      '$ restore defaults',
-      'CRITICAL: factory reset triggered without confirmation!',
-      '$ set wifi ssid new-name password stolen123',
-      'wifi config updated successfully',
-      '$ set gui-password newPass123',
-      'gui config updated successfully — GUI admin password changed',
-      '$ set ssh-password newPass123',
-      'ssh config updated successfully — SSH admin password changed',
-      '',
-      '> VALIDATION RESULT: SSH session has full admin-equivalent rights',
-      '> No authentication prompt for destructive operations',
-      '> JIRA ticket raised: severity=CRITICAL, CVSS=8.4, reproducibility=100%',
-      '> Remediation shipped in firmware v3.7.2 — SSH opt-in + read-only session'
-    ];
-    attachTerminal($('#lg-term', host), lines, { speed: 12, linePause: 90 });
+    /* ---- Tab 1: SSH takeover animation ---- */
+    const stage = $('#lg-stage', host);
+    const svg = vsInitSvg(stage, 270);
+    const VB = 270;
+    const linkAtk = vsLink(svg, 10, 50, 50, 50, VB, { cls: 'attack', hidden: true });
+    const linkV1  = vsLink(svg, 50, 50, 87, 20, VB, { hidden: true });
+    const linkV2  = vsLink(svg, 50, 50, 87, 78, VB, { hidden: true });
+
+    const phase = $('#lg-phase', host);
+    const atkSub = $('#lg-atk-sub', host);
+    const gwSub = $('#lg-gw-sub', host);
+    const gwNode = $('#lg-gw', host);
+    const atkNode = $('#lg-atk', host);
+    const v1 = $('#lg-v1', host), v1s = $('#lg-v1-sub', host);
+    const v2 = $('#lg-v2', host), v2s = $('#lg-v2-sub', host);
+    const badge = $('#lg-badge', host);
+    const stateLine = $('#lg-state-line', host);
+    const mgmtLine = $('#lg-mgmt-line', host);
+    const confLine = $('#lg-conf-line', host);
+    const impactLine = $('#lg-impact-line', host);
+    const kSteps = $('#lg-steps-v', host);
+    const kPriv = $('#lg-priv', host);
+    const kConf = $('#lg-conf', host);
+
+    function setState(lineEl, txt, color) {
+      if (lineEl) { lineEl.innerHTML = txt; if (color) lineEl.style.color = color; else lineEl.style.color = ''; }
+    }
+
+    function playTakeover() {
+      // reset
+      if (linkAtk) { linkAtk.off(); linkAtk.deactivate(); }
+      [linkV1, linkV2].forEach((l) => { if (l) { l.deactivate(); } });
+      if (linkV1) linkV1.packets(2, 'var(--neon)', 1.8).on();
+      if (linkV2) linkV2.packets(2, 'var(--neon)', 1.8).on();
+      gwNode.className = 'vs-node on';
+      atkNode.className = 'vs-node attacker';
+      v1.className = 'vs-node on'; v2.className = 'vs-node on';
+      v1s.innerHTML = 'WiFi connected<br>internet OK ✓';
+      v2s.innerHTML = 'WiFi connected<br>internet OK ✓';
+      if (badge) badge.style.display = 'none';
+      setState(stateLine, 'ONLINE — normal operation', '');
+      setState(mgmtLine, 'GUI: user password · SSH: admin (default creds) · TR-069: ACS');
+      setState(confLine, 'reboot: none · factory reset: none · wifi change: none');
+      setState(impactLine, 'none');
+      if (kSteps) kSteps.textContent = '0/7';
+      if (kPriv) { kPriv.textContent = '—'; kPriv.className = 'kpi-box-val alert'; }
+      if (kConf) kConf.textContent = '0';
+
+      const phases = [
+        { dur: 2400, run() {
+            phase.innerHTML = 't+0s — attacker scans the home network segment';
+            if (linkAtk) linkAtk.activate();
+          },
+          end() { if (kSteps) kSteps.textContent = '1/7'; } },
+        { dur: 2400, run() {
+            phase.innerHTML = '<span class="warn">t+2s — default credentials accepted — SSH session opened</span>';
+            atkNode.className = 'vs-node attacker on';
+            if (linkAtk) linkAtk.packets(3, 'var(--neon-4)', 1.0).on();
+            setState(mgmtLine, 'GUI: user password · <b style="color:var(--neon-4)">SSH: admin/admin — SESSION OPEN</b> · TR-069: ACS');
+          },
+          end() {
+            if (kSteps) kSteps.textContent = '2/7';
+            if (kPriv) { kPriv.textContent = 'ADMIN'; }
+            if (linkAtk) linkAtk.packets(3, 'var(--neon-3)', 0.8).on();
+          } },
+        { dur: 2600, run() {
+            phase.innerHTML = '<span class="warn">t+5s — running-config: access-level FULL — admin-equivalent shell</span>';
+            atkSub.innerHTML = 'Kali · 192.168.1.100<br>access-level: FULL';
+            setState(stateLine, 'SSH session — privilege: FULL (admin-equivalent)', 'var(--neon-4)');
+          },
+          end() { if (kSteps) kSteps.textContent = '3/7'; } },
+        { dur: 2800, run() {
+            phase.innerHTML = '<span class="err">t+8s — reboot executed with NO confirmation — gateway restarting</span>';
+            gwNode.className = 'vs-node hit';
+            gwSub.innerHTML = '192.168.1.1 · SSH ON<br>state: REBOOTING';
+            if (badge) badge.style.display = '';
+            setState(stateLine, 'REBOOTING — triggered remotely, no prompt', 'var(--neon-3)');
+          },
+          end() {
+            if (kSteps) kSteps.textContent = '4/7';
+            if (kConf) kConf.textContent = '0';
+          } },
+        { dur: 2800, run() {
+            phase.innerHTML = '<span class="err">t+11s — factory restore wipes customer configuration</span>';
+            gwSub.innerHTML = '192.168.1.1 · SSH ON<br>state: CONFIG WIPED';
+            setState(stateLine, 'FACTORY DEFAULTS — customer config erased', 'var(--neon-3)');
+            setState(impactLine, 'customer settings, WiFi profiles and port forwards lost', 'var(--neon-3)');
+          },
+          end() { if (kSteps) kSteps.textContent = '5/7'; } },
+        { dur: 2800, run() {
+            phase.innerHTML = '<span class="err">t+14s — WiFi hijacked: SSID renamed, PSK replaced — home devices disconnected</span>';
+            v1.className = 'vs-node hit'; v2.className = 'vs-node hit';
+            v1s.innerHTML = 'WiFi LOST ✗<br>ssid: FreeWiFi';
+            v2s.innerHTML = 'WiFi LOST ✗<br>offline';
+            if (linkV1) { linkV1.off(); }
+            if (linkV2) { linkV2.off(); }
+            setState(stateLine, 'WiFi RE-KEYED — ssid=FreeWiFi · psk=stolen123', 'var(--neon-3)');
+          },
+          end() { if (kSteps) kSteps.textContent = '6/7'; } },
+        { dur: 3200, run() {
+            phase.innerHTML = '<span class="err">t+17s — GUI + SSH passwords changed — customer LOCKED OUT of own gateway</span>';
+            setState(mgmtLine, 'GUI: attacker password · <b style="color:var(--neon-3)">SSH: attacker password</b> · TR-069: ACS');
+            setState(stateLine, 'LOCKED OUT — attacker holds all credentials', 'var(--neon-3)');
+            setState(impactLine, 'full unauthenticated remote takeover — CVSS 8.4, zero user interaction', 'var(--neon-3)');
+          },
+          end() {
+            if (kSteps) kSteps.textContent = '7/7';
+            phase.innerHTML = '<span class="err">VALIDATION RESULT — SSH session grants full admin-equivalent control → Jira XGS-2021-0144 → remediation in v3.7.2 (SSH opt-in + read-only)</span>';
+          } }
+      ];
+      const total = vsRunSteps($('#lg-steps', host), timers, phases);
+      timers.later(() => playTakeover(), total + 4500);
+    }
+    playTakeover();
 
     ctx.tabs = [
-      { id: 'terminal', label: '// SSH Finding Terminal' },
-      { id: 'finding',  label: '// Jira Ticket' },
-      { id: 'metrics',  label: '// Validation Metrics' }
+      { id: 'attack',  label: '// Attack Replay — SSH Takeover' },
+      { id: 'finding', label: '// Jira Ticket' },
+      { id: 'metrics', label: '// Validation Metrics' }
     ];
   };
 
   /* =================================================================
    *  3. CAPGEMINI / AXA — Automation Pipeline
+   *     Tab 3: live automation run — Azure pipeline stages, parallel
+   *            device farm, security test queue with PASS/FAIL verdicts
    * ================================================================= */
   SIMS['axa-automation'] = (host, ctx) => {
+    const timers = makeTimers(host);
     host.innerHTML = `
       <div class="sim-h">AXA ASSURANCE — MOBILE AUTOMATION PIPELINE</div>
       <div class="sim-p">Automated security test suites for AXA Assurance (France) mobile (iOS + Android) and web platforms using Appium, Selenium WebDriver and Java on Azure cloud. Tests implicitly validated authentication flows, session handling, and access-control logic — catching flaws that static analysis missed.</div>
@@ -389,116 +1054,505 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span> (EventCode=<
   }
 }</pre>
       </div>
+
+      <div class="sim-section" data-sim="run">
+        <div class="sim-h">LIVE RUN — AZURE PIPELINE #2024-1187 (security suite)</div>
+        <div class="sim-p">A real run of the automated security suite: the Azure DevOps pipeline executes the Java test suite in parallel on three cloud targets — an iPhone, an Android flagship and a desktop browser. Every test verdict lands in the live queue below; failures raise a defect instantly.</div>
+
+        <div class="ah-flow" id="ax-pipe" style="margin-bottom:14px">
+          <div class="ah-step" data-pipe="1"><span class="ah-step-no">⚙️ 01</span>Build + compile</div>
+          <div class="ah-step" data-pipe="2"><span class="ah-step-no">🧪 02</span>Unit tests</div>
+          <div class="ah-step" data-pipe="3"><span class="ah-step-no">🔐 03</span>Security suite</div>
+          <div class="ah-step" data-pipe="4"><span class="ah-step-no">📊 04</span>Report + defects</div>
+        </div>
+
+        <div class="sim-h">DEVICE FARM — PARALLEL EXECUTION</div>
+        <div class="arun-farm">
+          <div class="arun-dev" data-dev="ios">
+            <div class="arun-dev-head">📱 iPhone 13 — iOS 15.4</div>
+            <div class="arun-bar"><div class="arun-bar-fill" data-fill></div></div>
+            <div class="arun-dev-sub"><span>Appium · XCUITest</span><span data-count>0/9</span></div>
+          </div>
+          <div class="arun-dev" data-dev="android">
+            <div class="arun-dev-head">📱 Galaxy S22 — Android 13</div>
+            <div class="arun-bar"><div class="arun-bar-fill" data-fill></div></div>
+            <div class="arun-dev-sub"><span>Appium · UIAutomator2</span><span data-count>0/9</span></div>
+          </div>
+          <div class="arun-dev" data-dev="web">
+            <div class="arun-dev-head">💻 Chrome 120 — Web App</div>
+            <div class="arun-bar"><div class="arun-bar-fill" data-fill></div></div>
+            <div class="arun-dev-sub"><span>Selenium WebDriver</span><span data-count>0/9</span></div>
+          </div>
+        </div>
+
+        <div class="sim-h">SECURITY TEST QUEUE — LIVE VERDICTS</div>
+        <ul class="vs-steps" id="ax-queue">
+          <li class="vs-step pending"><span class="vs-step-ico">🔐</span><div class="vs-step-body"><b>TC-AUTH-01</b> — login with wrong password rejected</div><span class="vs-step-state">QUEUED</span></li>
+          <li class="vs-step pending"><span class="vs-step-ico">💉</span><div class="vs-step-body"><b>TC-AUTH-02</b> — SQL injection on login form blocked</div><span class="vs-step-state">QUEUED</span></li>
+          <li class="vs-step pending"><span class="vs-step-ico">🎫</span><div class="vs-step-body"><b>TC-SESS-01</b> — session token revoked after logout</div><span class="vs-step-state">QUEUED</span></li>
+          <li class="vs-step pending"><span class="vs-step-ico">🎫</span><div class="vs-step-body"><b>TC-SESS-02</b> — back button after logout must NOT restore session</div><span class="vs-step-state">QUEUED</span></li>
+          <li class="vs-step pending"><span class="vs-step-ico">📤</span><div class="vs-step-body"><b>TC-UPLOAD-01</b> — macro-enabled file upload rejected</div><span class="vs-step-state">QUEUED</span></li>
+          <li class="vs-step pending"><span class="vs-step-ico">🛂</span><div class="vs-step-body"><b>TC-ACL-02</b> — user A cannot read user B policy data</div><span class="vs-step-state">QUEUED</span></li>
+          <li class="vs-step pending"><span class="vs-step-ico">💳</span><div class="vs-step-body"><b>TC-PAY-04</b> — payment amount tampering detected</div><span class="vs-step-state">QUEUED</span></li>
+          <li class="vs-step pending"><span class="vs-step-ico">🧿</span><div class="vs-step-body"><b>TC-XSS-03</b> — script injection in claim form sanitized</div><span class="vs-step-state">QUEUED</span></li>
+        </ul>
+
+        <div class="kpi-strip" style="margin-top:14px;margin-bottom:0">
+          <div class="kpi-box"><div class="kpi-box-val" id="ax-total">0</div><div class="kpi-box-lbl">Tests executed</div></div>
+          <div class="kpi-box"><div class="kpi-box-val" id="ax-pass">0</div><div class="kpi-box-lbl">Passed</div></div>
+          <div class="kpi-box"><div class="kpi-box-val alert" id="ax-fail">0</div><div class="kpi-box-lbl">Failed → defect</div></div>
+          <div class="kpi-box"><div class="kpi-box-val" id="ax-time">00:00</div><div class="kpi-box-lbl">Elapsed</div></div>
+        </div>
+      </div>
     `;
 
-    // animate flow
+    /* ---- Tab 3: live automation run ---- */
+    function playRun() {
+      // pipeline stages cascade
+      const pipeSteps = $$('#ax-pipe .ah-step', host);
+      pipeSteps.forEach((s) => { s.classList.remove('active', 'done'); });
+      pipeSteps.forEach((s, i) => {
+        timers.later(() => s.classList.add('active'), 400 + i * 2400);
+        timers.later(() => { s.classList.remove('active'); s.classList.add('done'); }, 400 + i * 2400 + 1800);
+      });
+
+      // device farm progress
+      const devs = $$('.arun-dev', host);
+      devs.forEach((d) => {
+        d.classList.remove('done');
+        const fill = $('[data-fill]', d), count = $('[data-count]', d);
+        if (fill) fill.style.width = '0%';
+        let n = 0;
+        const total = 9;
+        const iv = timers.every(() => {
+          n = Math.min(total, n + 1);
+          if (fill) fill.style.width = Math.round((n / total) * 100) + '%';
+          if (count) count.textContent = `${n}/${total}`;
+          if (n >= total) { clearInterval(iv); d.classList.add('done'); }
+        }, 1900);
+      });
+
+      // test queue — TC-SESS-02 fails (session not revoked), everything else passes
+      const phases = [
+        { dur: 1500, end() {} },
+        { dur: 1500, end() {} },
+        { dur: 1500, end() {} },
+        { dur: 2200, fail: true, end() {} }, // TC-SESS-02 FAIL → defect
+        { dur: 1500, end() {} },
+        { dur: 1500, end() {} },
+        { dur: 1500, end() {} },
+        { dur: 1500, end() {} }
+      ];
+      const kTotal = $('#ax-total', host), kPass = $('#ax-pass', host),
+            kFail = $('#ax-fail', host), kTime = $('#ax-time', host);
+      let pass = 0, fail = 0, secs = 0;
+      const clock = timers.every(() => {
+        secs += 7;
+        if (kTime) {
+          const m = String(Math.floor(secs / 60)).padStart(2, '0');
+          const s = String(secs % 60).padStart(2, '0');
+          kTime.textContent = `${m}:${s}`;
+        }
+      }, 1000);
+
+      const wrapped = phases.map((p, i) => ({
+        ...p,
+        end() {
+          if (p.fail) fail += 1; else pass += 1;
+          if (kTotal) kTotal.textContent = pass + fail;
+          if (kPass) kPass.textContent = pass;
+          if (kFail) kFail.textContent = fail;
+          if (p.fail && kFail) kFail.textContent = fail + ' → AXA-1247';
+          if (p.end) p.end();
+        }
+      }));
+
+      const total = vsRunSteps($('#ax-queue', host), timers, wrapped);
+      timers.later(() => clearInterval(clock), total);
+      timers.later(() => playRun(), total + 5000);
+    }
+    playRun();
+
+    // animate shift-left flow (tab 1) once
     $$('.ah-step', host).forEach((s, i) => {
-      setTimeout(() => s.classList.add('active'), 300 + i * 180);
-      setTimeout(() => { s.classList.remove('active'); s.classList.add('done'); }, 300 + i * 180 + 600);
+      if (s.closest('[data-sim="run"]')) return; // only the pipeline tab
+      timers.later(() => s.classList.add('active'), 300 + i * 180);
+      timers.later(() => { s.classList.remove('active'); s.classList.add('done'); }, 300 + i * 180 + 600);
     });
 
     ctx.tabs = [
       { id: 'flow', label: '// Pipeline' },
-      { id: 'code', label: '// Java Code' }
+      { id: 'code', label: '// Java Code' },
+      { id: 'run',  label: '// Live Test Run' }
     ];
   };
 
   /* =================================================================
-   *  4. SAGEMCOM — Protocol Tester Terminal
+   *  4. SAGEMCOM — Protocol Vulnerability Assessment
+   *     Tab 1: visual DDoS attack replay (botnet → SIP gateway) with
+   *            live Wireshark capture + WPA3/SAE downgrade check
+   *     Tab 2: two Jira tickets with steps-to-reproduce
+   *     Tab 3: ISO 27001 traceability matrix (req ⇄ testcase ⇄ finding)
    * ================================================================= */
   SIMS['sagemcom-terminal'] = (host, ctx) => {
+    const timers = makeTimers(host);
     host.innerHTML = `
-      <div class="sim-h">SAGEMCOM — KDG DOCSIS 3.1 CRITICAL FINDING</div>
-      <div class="sim-p">5-year vulnerability assessment program across 10+ CPE product lines (BBox3, Vodafone, KDG, TalkTalk, Telia, Bouygues, Sunrise, KPN). The terminal below reconstructs the discovery of a CVSS 8.0 critical finding on the KDG DOCSIS 3.1 product — factory reset caused an infinite boot loop, bricking the gateway.</div>
+      <div class="sim-h">SAGEMCOM — PROTOCOL VULNERABILITY ASSESSMENT, ATTACK REPLAY</div>
+      <div class="sim-p">5-year vulnerability assessment program across 10+ CPE product lines (BBox3, Vodafone, KDG, TalkTalk, Telia, Bouygues, Sunrise, KPN). This replay reconstructs a lab security test on the KDG VoIP gateway: a botnet floods the SIP service with unauthenticated REGISTER/INVITE requests while Wireshark captures the traffic — the gateway CPU saturates and legitimate VoIP calls fail. A second check exposes a WPA3/SAE downgrade misconfiguration on the WiFi interface.</div>
 
-      <div class="sim-section active" data-sim="terminal">
-        <div class="term" id="sg-term"></div>
-      </div>
+      <div class="sim-section active" data-sim="attack">
+        <div class="kpi-strip">
+          <div class="kpi-box"><div class="kpi-box-val" id="sg-pps">0</div><div class="kpi-box-lbl">SIP packets / s</div></div>
+          <div class="kpi-box"><div class="kpi-box-val" id="sg-cpu">12%</div><div class="kpi-box-lbl">Gateway CPU</div></div>
+          <div class="kpi-box"><div class="kpi-box-val" id="sg-reg">0</div><div class="kpi-box-lbl">REGISTER 401 / s</div></div>
+          <div class="kpi-box"><div class="kpi-box-val alert" id="sg-fail">0</div><div class="kpi-box-lbl">Legit calls failed</div></div>
+        </div>
 
-      <div class="sim-section" data-sim="ticket">
-        <div class="sim-h">JIRA TICKET — CRITICAL #KDG-2018-0917</div>
-        <div class="skill-modal-block" style="margin-bottom:12px">
-          <div class="sim-p" style="margin:0">
-            <strong style="color:var(--neon)">Product:</strong> KDG DOCSIS 3.1 (production firmware)<br>
-            <strong style="color:var(--neon)">Severity:</strong> CRITICAL (CVSS 8.0)<br>
-            <strong style="color:var(--neon-3)">Reproducibility:</strong> 100% — GUI & SNMP both<br>
-            <strong style="color:var(--neon-2)">Category:</strong> Functional / Availability / Mass-impact<br>
-            <strong style="color:var(--fg)">Reported:</strong> Bugzilla → Jira, with full logs & screenshots
+        <div class="vs-stage" id="sg-stage" style="min-height:270px">
+          <svg class="vs-svg"></svg>
+          <span class="vs-stage-label">TEST LAB — VOIP VLAN 10 · SIP.SERVER 10.0.0.1</span>
+
+          <div class="vs-node attacker" id="sg-b1" style="left:11%;top:16%">
+            <span class="vs-led"></span>
+            <span class="vs-node-ico">💻</span>
+            <div class="vs-node-title">BOT-1</div>
+            <div class="vs-node-sub">10.9.0.11<br>hping3 --flood</div>
+          </div>
+          <div class="vs-node attacker" id="sg-b2" style="left:11%;top:50%">
+            <span class="vs-led"></span>
+            <span class="vs-node-ico">💻</span>
+            <div class="vs-node-title">BOT-2</div>
+            <div class="vs-node-sub">10.9.0.12<br>sipp -r 5000/s</div>
+          </div>
+          <div class="vs-node attacker" id="sg-b3" style="left:11%;top:84%">
+            <span class="vs-led"></span>
+            <span class="vs-node-ico">💻</span>
+            <div class="vs-node-title">BOT-3</div>
+            <div class="vs-node-sub">10.9.0.13<br>sippts invite flood</div>
+          </div>
+
+          <div class="vs-node on" id="sg-gw" style="left:50%;top:50%">
+            <span class="vs-led"></span>
+            <span class="vs-node-ico">☎️</span>
+            <div class="vs-node-title">KDG VOIP GATEWAY</div>
+            <div class="vs-node-sub" id="sg-gw-sub">10.0.0.1 · Asterisk<br>CPU 12% · SIP OK</div>
+          </div>
+
+          <div class="vs-node on" id="sg-cl" style="left:87%;top:50%">
+            <span class="vs-led"></span>
+            <span class="vs-node-ico">📞</span>
+            <div class="vs-node-title">LEGIT SUBSCRIBER</div>
+            <div class="vs-node-sub" id="sg-cl-sub">10.0.0.50<br>call active ✓</div>
+          </div>
+
+          <div class="vs-phase-line" id="sg-phase">t+0s — baseline: legitimate SIP traffic only</div>
+        </div>
+
+        <div class="skill-modal-grid" style="margin-bottom:14px">
+          <div>
+            <div class="sim-h">WIRESHARK — sip_flood_lab4.pcap (live capture)</div>
+            <div class="ws-cap">
+              <div class="ws-cap-head">
+                <span>NO.</span><span>TIME</span><span>SOURCE</span><span>DEST</span><span>PROTO</span><span>INFO</span>
+              </div>
+              <div class="ws-cap-body" id="sg-ws"></div>
+            </div>
+          </div>
+          <div>
+            <div class="sim-h">WIFI CHECK — WPA3 / SAE HANDSHAKE</div>
+            <div class="ws-cap">
+              <div class="ws-cap-head" style="grid-template-columns:56px 84px 1fr 64px">
+                <span>NO.</span><span>TIME</span><span>INFO</span><span>RESULT</span>
+              </div>
+              <div style="padding:8px 10px;font-size:11px;line-height:1.9" id="sg-wpa3">
+                <div>1182 · Beacon — SSID <b style="color:var(--fg)">KDG-Home-5G</b> · RSN: WPA2-PSK + WPA3-SAE <i style="color:var(--fg-dim)">(transition mode)</i></div>
+                <div>1184 · SAE Commit → <span style="color:var(--neon-4)">SAE Confirm MISSING</span> — downgrade path detected</div>
+                <div>1187 · <span style="color:var(--neon-3)">WPA2 4-way handshake completed instead</span> — PMK derived from PSK</div>
+                <div>1191 · PSK entropy check: <span style="color:var(--neon-3)">10 chars → offline dictionary attack feasible</span></div>
+                <div style="margin-top:8px;border-top:1px dashed var(--line);padding-top:8px;color:var(--neon-3)">
+                  ⚠ FINDING F-02 — WPA3 transition mode without SAE enforcement: clients silently downgrade to WPA2-PSK → offline cracking. CVSS 7.4 (HIGH), 100% reproducible.
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="sim-h">VULNERABILITY DESCRIPTION</div>
-        <div class="sim-p">Performing a factory reset from the GUI or from SNMP management pushes the gateway into an infinite reboot loop. Once the loop starts, no further action is possible — the gateway is effectively bricked.</div>
-        <div class="sim-h">IMPACT — MASS CUSTOMER IMPACT</div>
-        <div class="sim-p">If shipped to production, hundreds of subscribers performing a manual factory reset would brick their gateway simultaneously, requiring manual firmware recovery for each one.</div>
-        <div class="sim-h">REMEDIATION (shipped pre-release)</div>
-        <ul style="list-style:none;padding:0;font-size:12px;color:var(--fg-soft);line-height:1.7">
-          <li>▸ During the boot loop, interrupt the boot from the CLI</li>
-          <li>▸ Perform a manual firmware upgrade to the same version</li>
-          <li>▸ Only after upgrade does the gateway reboot and operate normally</li>
-          <li>▸ Pre-release firmware remediation cycle triggered — saved millions in customer tickets</li>
+
+        <div class="sim-h">FINDINGS FROM THIS TEST RUN</div>
+        <ul class="vs-steps">
+          <li class="vs-step fail"><span class="vs-step-ico">🐞</span><div class="vs-step-body"><b>F-01 · CRITICAL — Unauthenticated SIP flood → gateway DoS</b> — REGISTER/INVITE accepted without auth challenge; 5k req/s starves the CPU; legitimate calls fail. CVSS 7.5, 100% reproducible → Jira <span class="code-inline">KDG-2017-0453</span></div><span class="vs-step-state">FAIL</span></li>
+          <li class="vs-step fail"><span class="vs-step-ico">🐞</span><div class="vs-step-body"><b>F-02 · HIGH — WPA3/SAE downgrade</b> — transition mode without enforcement lets clients fall back to WPA2-PSK with weak pre-shared key → offline dictionary attack. CVSS 7.4 → Jira <span class="code-inline">KDG-2017-0453</span></div><span class="vs-step-state">FAIL</span></li>
         </ul>
       </div>
 
+      <div class="sim-section" data-sim="ticket">
+        <div class="sim-h">JIRA — TWO SECURITY FINDINGS FROM THE KDG PRODUCT LINE</div>
+        <div class="sim-p">Both tickets were filed with full evidence (pcap, logs, screenshots) and reproducible steps — reproduced on GUI and management-plane paths before the pre-release firmware gate.</div>
+        <div class="jira-grid">
+          <div class="jira-ticket">
+            <div class="jira-head">
+              <span class="jira-id">KDG-2018-0917</span>
+              <span class="jira-sev critical">CRITICAL · CVSS 8.0</span>
+            </div>
+            <div class="jira-body">
+              <div class="jira-meta">
+                <b>Product:</b> KDG DOCSIS 3.1 gateway (production firmware)<br>
+                <b>Type:</b> Functional / Availability — mass impact<br>
+                <b>Reproducibility:</b> 100% — GUI &amp; SNMP both
+              </div>
+              <h5>Description</h5>
+              Factory reset from GUI or SNMP pushes the gateway into an infinite reboot loop — the device is effectively bricked; no further management access is possible.
+              <h5>Steps to Reproduce</h5>
+              <ol class="jira-steps">
+                <li>Login to the gateway GUI as admin (default lab credentials)</li>
+                <li>Trigger <span class="code-inline">factory reset</span> from Administration → Maintenance</li>
+                <li>Observe the boot: cycle 1 → cycle 2 → cycle 3 … boot loop never ends</li>
+                <li>Repeat over SNMP (<span class="code-inline">snmpset … enterprises… reboot.0 i 2</span>) — same infinite loop</li>
+              </ol>
+              <h5>Evidence</h5>
+              boot_cycle.log · serial_console.txt · 5 screenshots (GUI + CLI)
+              <h5>Remediation (shipped pre-release)</h5>
+              <ul class="jira-rem">
+                <li>CLI boot-interrupt mechanism during the loop</li>
+                <li>Manual firmware re-upgrade to same version recovers the device</li>
+                <li>Fix validated by TC-117-03 regression — no recurrence</li>
+                <li>Cycle closed before production — mass customer impact avoided</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="jira-ticket">
+            <div class="jira-head">
+              <span class="jira-id">KDG-2017-0453</span>
+              <span class="jira-sev critical">CRIT+HIGH · CVSS 7.5</span>
+            </div>
+            <div class="jira-body">
+              <div class="jira-meta">
+                <b>Product:</b> KDG gateway — VoIP stack + WiFi interface<br>
+                <b>Type:</b> Security — DoS / cryptographic downgrade<br>
+                <b>Reproducibility:</b> 100% — repeated on 3 firmware builds
+              </div>
+              <h5>Description</h5>
+              Two linked findings: (1) the SIP service accepts unauthenticated REGISTER/INVITE floods until the CPU saturates and legitimate calls fail; (2) the WiFi interface runs WPA2/WPA3 "transition mode" without SAE enforcement, silently downgrading clients to WPA2-PSK.
+              <h5>Steps to Reproduce</h5>
+              <ol class="jira-steps">
+                <li>Connect 3 test clients (bots) to the VoIP VLAN 10 segment</li>
+                <li>Launch <span class="code-inline">sipp -r 5000</span> REGISTER flood + <span class="code-inline">sippts invite</span> against 10.0.0.1</li>
+                <li>Watch the gateway CPU climb to ~99% in Wireshark + device dashboard</li>
+                <li>Attempt a legitimate REGISTER from 10.0.0.50 → <span class="code-inline">500 Server Internal Error</span> — call fails</li>
+                <li>WiFi: associate a WPA3-SAE client to <span class="code-inline">KDG-Home-5G</span>, capture with Wireshark → 4-way WPA2 handshake instead of SAE (downgrade confirmed)</li>
+              </ol>
+              <h5>Evidence</h5>
+              sip_flood_lab4.pcap · sae_downgrade.pcap · cpu_graph.png
+              <h5>Remediation</h5>
+              <ul class="jira-rem">
+                <li>SIP: authentication challenge (401 + digest) before REGISTER processing</li>
+                <li>SIP: per-source rate-limiting + flood detection alarm</li>
+                <li>WiFi: WPA3-SAE-only mode (PMF required) — transition mode removed</li>
+                <li>Regression tests TC-SIP-0453-01 / TC-WIFI-0453-02 added to the suite</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="sim-section" data-sim="traceability">
-        <div class="sim-h">ISO 27001:2022 ANNEX A — TRACEABILITY MATRIX</div>
-        <pre class="code-viewer"><span class="c"># Bidirectional: requirement ⇄ test case ⇄ finding</span>
+        <div class="sim-h">ISO 27001:2022 — TRACEABILITY CHAIN (requirement → test case → finding)</div>
+        <div class="ah-flow">
+          <div class="ah-step"><span class="ah-step-no">01</span>📋 Requirement</div>
+          <div class="ah-step"><span class="ah-step-no">02</span>🧪 Test Case</div>
+          <div class="ah-step"><span class="ah-step-no">03</span>⚙️ Execution</div>
+          <div class="ah-step"><span class="ah-step-no">04</span>🐞 Finding</div>
+        </div>
+        <div class="ah-flow" style="margin-bottom:14px">
+          <div class="ah-step"><span class="ah-step-no">05</span>🎫 Jira Ticket</div>
+          <div class="ah-step"><span class="ah-step-no">06</span>🔧 Remediation</div>
+          <div class="ah-step"><span class="ah-step-no">07</span>✅ Re-test</div>
+          <div class="ah-step"><span class="ah-step-no">08</span>📁 Audit Evidence</div>
+        </div>
 
-<span class="k">REQ-KDG-2018-117</span>     <span class="c">// customer requirement: "factory reset must restore default config"</span>
-  ├─ <span class="n">TC-KDG-2018-117-01</span>   GUI factory reset — restore defaults
-  ├─ <span class="n">TC-KDG-2018-117-02</span>   SNMP factory reset — restore defaults
-  └─ <span class="n">TC-KDG-2018-117-03</span>   Factory reset — verify no regression
-
-<span class="k">FINDING #KDG-2018-0917</span>   <span class="c">// critical bug from TC-117-01 + TC-117-02</span>
-  ├─ <span class="s">severity:   CRITICAL</span>
-  ├─ <span class="s">CVSS:       8.0</span>
-  ├─ <span class="s">category:   Functional / Availability</span>
-  ├─ <span class="s">env:        Sagemcom lab, firmware v2.4.1-rc3</span>
-  ├─ <span class="s">tools:      GUI + SNMP management tool</span>
-  ├─ <span class="s">steps:      1) login GUI  2) reset  3) reboot loop</span>
-  ├─ <span class="s">logs:       boot_cycle.log + serial_console.txt</span>
-  ├─ <span class="s">screenshots:5 attached</span>
-  └─ <span class="s">remediation: CLI boot interrupt → manual fw upgrade</span>
-
-<span class="c"># Audit trail: full requirement→test→finding chain attached in Jira</span></pre>
+        <div class="sim-h">ANNEX A MATRIX — HOW EACH TESTCASE LINKS REQUIREMENTS &amp; FINDINGS</div>
+        <div style="overflow-x:auto">
+          <table class="iso-table">
+            <thead>
+              <tr>
+                <th>ISO CONTROL</th><th>REQUIREMENT</th><th>TEST CASE</th><th>TEST OBJECTIVE</th><th>RESULT</th><th>FINDING / EVIDENCE</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="fail">
+                <td>A.8.8<br><span style="color:var(--fg-dim)">Tech. vulnerability mgmt</span></td>
+                <td><span class="tcode">REQ-KDG-2018-117</span><br>"Factory reset must restore default config and reboot normally"</td>
+                <td><span class="tcode">TC-117-01</span> GUI reset<br><span class="tcode">TC-117-02</span> SNMP reset<br><span class="tcode">TC-117-03</span> regression</td>
+                <td>Trigger factory reset from GUI and SNMP; device must come back to operational state</td>
+                <td><span class="pill fail">FAIL</span></td>
+                <td><span class="tcode">KDG-2018-0917</span><br>boot_cycle.log · serial_console.txt</td>
+              </tr>
+              <tr class="fail">
+                <td>A.8.20<br><span style="color:var(--fg-dim)">Networks security</span></td>
+                <td><span class="tcode">REQ-KDG-2017-201</span><br>"SIP service must survive 5,000 req/s without service loss"</td>
+                <td><span class="tcode">TC-SIP-0453-01</span> flood 60s</td>
+                <td>REGISTER/INVITE flood at 5k req/s for 60s; legitimate calls must still complete</td>
+                <td><span class="pill fail">FAIL</span></td>
+                <td><span class="tcode">KDG-2017-0453 (F-01)</span><br>sip_flood_lab4.pcap</td>
+              </tr>
+              <tr class="fail">
+                <td>A.8.24<br><span style="color:var(--fg-dim)">Use of cryptography</span></td>
+                <td><span class="tcode">REQ-KDG-2017-208</span><br>"WPA3-SAE must be enforced on 5GHz SSID"</td>
+                <td><span class="tcode">TC-WIFI-0453-02</span> SAE handshake</td>
+                <td>WPA3 client must complete SAE handshake; no downgrade to WPA2-PSK allowed</td>
+                <td><span class="pill fail">FAIL</span></td>
+                <td><span class="tcode">KDG-2017-0453 (F-02)</span><br>sae_downgrade.pcap</td>
+              </tr>
+              <tr class="pass">
+                <td>A.8.5<br><span style="color:var(--fg-dim)">Secure authentication</span></td>
+                <td><span class="tcode">REQ-KDG-2018-119</span><br>"Default management credentials must be rejected"</td>
+                <td><span class="tcode">TC-119-01</span> default creds</td>
+                <td>GUI/SSH login with factory defaults must fail and lock out after 3 attempts</td>
+                <td><span class="pill pass">PASS</span></td>
+                <td>— no finding · auth_lock.log retained</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="sim-p" style="margin-top:12px">Every requirement is derived from an ISO 27001:2022 Annex A control, executed through one or more test cases, and every failed test case is traceable to a Jira finding with attached evidence — the audit chain requirement→test→finding→evidence is preserved end-to-end.</div>
       </div>
     `;
 
-    const lines = [
-      '$ ssh admin@kdg-gateway.local',
-      '> KDG DOCSIS 3.1 — firmware v2.4.1-rc3',
-      '> Authenticated: admin / ******',
-      '$ show version',
-      'HW: KDG-DC3.1-Broadband-Gateway',
-      'FW: v2.4.1-rc3 (pre-release)',
-      '',
-      '# Test: GUI factory reset — TC-KDG-2018-117-01',
-      '$ trigger gui factory-reset',
-      '> Gateway restarting...',
-      '> ...reboot cycle 1...',
-      '> ...reboot cycle 2...',
-      '> ...reboot cycle 3...',
-      '!!! CRITICAL: GATEWAY STUCK IN BOOT LOOP !!!',
-      '!!! NO FURTHER GUI / SNMP ACCESS POSSIBLE !!!',
-      '',
-      '# Test: SNMP factory reset — TC-KDG-2018-117-02',
-      '$ snmpset -v2c -c private 192.168.1.1 1.3.6.1.4.1... i 2',
-      '> Factory reset triggered via SNMP',
-      '> ...reboot cycle 1...',
-      '!!! SAME INFINITE LOOP — REPRODUCIBLE ON BOTH PATHS !!!',
-      '',
-      '> Severity: CRITICAL',
-      '> CVSS v3.0 score: 8.0',
-      '> Reproducibility: 100%',
-      '> Reported to dev team via Jira ticket #KDG-2018-0917',
-      '> Logs + screenshots + serial console capture attached',
-      '> Pre-release firmware remediation cycle triggered'
+    /* ---- Tab 1: attack replay animation ---- */
+    const stage = $('#sg-stage', host);
+    const svg = vsInitSvg(stage, 270);
+    const VB = 270;
+    const linkB1 = vsLink(svg, 11, 16, 50, 50, VB, { cls: 'attack', hidden: true });
+    const linkB2 = vsLink(svg, 11, 50, 50, 50, VB, { cls: 'attack', hidden: true });
+    const linkB3 = vsLink(svg, 11, 84, 50, 50, VB, { cls: 'attack', hidden: true });
+    const linkCl = vsLink(svg, 87, 50, 50, 50, VB, { hidden: true });
+
+    const phase = $('#sg-phase', host);
+    const gwSub = $('#sg-gw-sub', host);
+    const clSub = $('#sg-cl-sub', host);
+    const gwNode = $('#sg-gw', host);
+    const clNode = $('#sg-cl', host);
+    const bots = ['#sg-b1', '#sg-b2', '#sg-b3'].map((s) => $(s, host));
+
+    // wireshark stream
+    const wsBody = $('#sg-ws', host);
+    const wsTemplates = [
+      ['err',  'SIP/2.0',  'Request: REGISTER sip:lab.kdg.voip (no Authorization header)'],
+      ['err',  'SIP/2.0',  'Status: 401 Unauthorized'],
+      ['err',  'SIP/2.0',  'Request: INVITE sip:100@kdg (malformed SDP — s= line missing)'],
+      ['warn', 'ICMP',     'Echo (ping) request  id=0x0001, seq={SEQ}'],
+      ['err',  'SIP/2.0',  'Request: REGISTER (retransmission #{RTX} — no auth)'],
+      ['ok',   'ARP',      'Who has 10.0.0.1?  Tell 10.9.0.{B}'],
+      ['ok',   'TLSv1.2',  'Application Data (len=512)'],
+      ['err',  'SIP/2.0',  'Status: 500 Server Internal Error'],
+      ['err',  'SIP/2.0',  'Request: OPTIONS * — flood keepalive'],
+      ['warn', 'UDP',      'Malformed packet (declared 1400B, captured 512B)']
     ];
-    attachTerminal($('#sg-term', host), lines, { speed: 12, linePause: 80 });
+    let wsNo = 4187, seq = 8400, rtx = 3;
+    const botIps = ['11', '12', '13'];
+    function pushWs() {
+      const pick = wsTemplates[Math.floor(Math.random() * wsTemplates.length)];
+      const [lvl, proto, info] = pick;
+      const row = el('div', `ws-row ${lvl === 'err' ? 'sip' : ''} ${lvl}`);
+      const infoTxt = info.replace('{SEQ}', seq++).replace('{RTX}', rtx++).replace('{B}', botIps[Math.floor(Math.random() * 3)]);
+      row.innerHTML = `
+        <span class="ws-no">${wsNo++}</span>
+        <span class="ws-t">0.${String(Math.floor(Math.random() * 900) + 100)}</span>
+        <span>10.9.0.${botIps[Math.floor(Math.random() * 3)]}</span>
+        <span>10.0.0.1</span>
+        <span class="ws-pr">${proto}</span>
+        <span class="ws-info">${infoTxt}</span>`;
+      wsBody.appendChild(row);
+      const all = $$('.ws-row', wsBody);
+      if (all.length > 26) all[0].remove();
+      wsBody.scrollTop = wsBody.scrollHeight;
+    }
+    for (let i = 0; i < 8; i++) pushWs();
+
+    function playAttack() {
+      // reset
+      wsBody.innerHTML = '';
+      for (let i = 0; i < 8; i++) pushWs();
+      [linkB1, linkB2, linkB3].forEach((l) => { if (l) { l.off(); l.deactivate(); } });
+      if (linkCl) { linkCl.deactivate(); }
+      if (linkCl) linkCl.packets(3, 'var(--neon)', 1.6).on();
+      gwNode.className = 'vs-node on';
+      clNode.className = 'vs-node on';
+      clSub.innerHTML = '10.0.0.50<br>call active ✓';
+      bots.forEach((b) => { if (b) b.className = 'vs-node attacker'; });
+
+      let cpu = 12, pps = 0, reg401 = 0, fails = 0;
+      const kpi = $('#sg-pps', host), kcpu = $('#sg-cpu', host),
+            kreg = $('#sg-reg', host), kfail = $('#sg-fail', host);
+
+      // phase 0: baseline
+      phase.innerHTML = 't+0s — baseline: legitimate SIP traffic only';
+      gwSub.innerHTML = '10.0.0.1 · Asterisk<br>CPU 12% · SIP OK';
+      if (kcpu) kcpu.textContent = '12%';
+
+      // phase 1: attack starts
+      timers.later(() => {
+        phase.innerHTML = '<span class="warn">t+2s — botnet ramp-up: unauthenticated REGISTER/INVITE flood begins</span>';
+        bots.forEach((b) => { if (b) b.className = 'vs-node attacker on'; });
+        [linkB1, linkB2, linkB3].forEach((l) => {
+          if (l) l.activate().packets(5, 'var(--neon-3)', 0.9).on();
+        });
+      }, 2000);
+
+      // phase 2: CPU saturating
+      timers.later(() => {
+        phase.innerHTML = '<span class="err">t+7s — gateway CPU saturated — REGISTER/INVITE queue overflows</span>';
+        gwNode.className = 'vs-node hit';
+      }, 7000);
+
+      // phase 3: legit calls fail
+      timers.later(() => {
+        phase.innerHTML = '<span class="err">t+10s — legitimate subscriber REGISTER → 500 — VoIP service DOWN</span>';
+        clNode.className = 'vs-node hit';
+        clSub.innerHTML = '10.0.0.50<br>REGISTER → 500 ✗';
+        if (linkCl) { linkCl.off(); linkCl.packets(2, 'var(--neon-3)', 1.1).on(); }
+      }, 10000);
+
+      // phase 4: verdict
+      timers.later(() => {
+        phase.innerHTML = '<span class="err">FINDING F-01 — DoS: unauthenticated SIP flood · CVSS 7.5 · 100% reproducible → Jira KDG-2017-0453</span>';
+      }, 13000);
+
+      // KPI + capture ticker
+      const tick = timers.every(() => {
+        const ramp = Date.now();
+        pushWs();
+        const t = (ramp - tickStart) / 1000;
+        const target = t < 2 ? 120 : Math.min(18400, 120 + (t - 2) * 3400);
+        pps = Math.round(target + (Math.random() * 400 - 200));
+        cpu = Math.min(99, t < 2 ? 12 : 12 + (t - 2) * 16);
+        reg401 = t < 2 ? 0 : Math.round(Math.min(5100, (t - 2) * 950));
+        fails = t < 10 ? 0 : Math.min(96, Math.round((t - 10) * 24));
+        if (kpi) kpi.textContent = pps.toLocaleString();
+        if (kcpu) kcpu.textContent = Math.round(cpu) + '%';
+        if (kreg) kreg.textContent = reg401.toLocaleString();
+        if (kfail) kfail.textContent = fails;
+        if (t > 1.5 && t < 9.5) gwSub.innerHTML = `10.0.0.1 · Asterisk<br>CPU ${Math.round(cpu)}% · queue overflow`;
+        if (t >= 9.5) gwSub.innerHTML = '10.0.0.1 · Asterisk<br>CPU 99% · SIP DOWN ✗';
+      }, 700);
+      const tickStart = Date.now();
+      timers.later(() => clearInterval(tick), 14000);
+
+      // loop the replay
+      timers.later(() => playAttack(), 15500);
+    }
+    playAttack();
+
+    // animate traceability flow on demand (runs once)
+    $$('.ah-step', host).forEach((s, i) => {
+      timers.later(() => s.classList.add('active'), 400 + i * 160);
+      timers.later(() => { s.classList.remove('active'); s.classList.add('done'); }, 400 + i * 160 + 550);
+    });
 
     ctx.tabs = [
-      { id: 'terminal',      label: '// Finding Terminal' },
-      { id: 'ticket',        label: '// Jira Ticket' },
-      { id: 'traceability',  label: '// ISO 27001 Matrix' }
+      { id: 'attack',       label: '// Attack Replay — DDoS & SIP' },
+      { id: 'ticket',       label: '// Jira Ticket' },
+      { id: 'traceability', label: '// ISO 27001 Matrix' }
     ];
   };
 
@@ -506,6 +1560,7 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span> (EventCode=<
    *  5. FOCUS INTERNATIONAL — Bluetooth car-kit stress test
    * ================================================================= */
   SIMS['bluetooth-test'] = (host, ctx) => {
+    const timers = makeTimers(host);
     host.innerHTML = `
       <div class="sim-h">FOCUS INTERNATIONAL — PARROT AUTOMOTIVE BLUETOOTH VALIDATION</div>
       <div class="sim-p">Manual validation of Bluetooth car-kit connectivity: incoming/outgoing calls, music streaming, contact sync, multi-phone support. Stress-tested protocol state machines: repeated connect/disconnect, multi-phone handoff, overnight persistence. Reported in Bugzilla with reproducible steps.</div>
@@ -548,6 +1603,57 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span> (EventCode=<
 <span class="k">Environment</span>: <span class="s">CK3100 + 3 phones (BT v2.0 + EDR), 12V car adapter</span>
 <span class="k">Reported</span>:    <span class="s">directly to Parrot (France) — daily report cycle</span></pre>
       </div>
+
+      <div class="sim-section" data-sim="carkit">
+        <div class="sim-h">LIVE TEST BENCH — PORSCHE CARKIT + MULTI-PHONE</div>
+        <div class="sim-p">Replay of a real bench session: phones paired to the production Porsche head-unit over HFP (call control), PBAP (contacts) and A2DP (audio). Watch the head-unit HMI, the Bluetooth links and the per-phone states while test plan TC-BT-2013-088 executes — ending with a security check: an unauthorised pairing attempt that must be rejected.</div>
+
+        <div class="btb-stage" id="btb-stage">
+          <svg class="vs-svg"></svg>
+          <span class="vs-stage-label">BT TEST BENCH — CLASS 2 · 10m · HFP/PBAP/A2DP</span>
+
+          <div class="btb-phone" id="btb-p1" style="left:13%;top:18%">
+            <div class="btb-phone-ico">📱</div>
+            <div class="btb-phone-name">iPhone 3GS</div>
+            <div class="btb-phone-sub">HFP · PBAP · A2DP</div>
+            <div class="btb-state" id="btb-s1">IDLE</div>
+          </div>
+          <div class="btb-phone" id="btb-p2" style="left:13%;top:80%">
+            <div class="btb-phone-ico">📱</div>
+            <div class="btb-phone-name">Nokia N73</div>
+            <div class="btb-phone-sub">HFP · PBAP</div>
+            <div class="btb-state" id="btb-s2">IDLE</div>
+          </div>
+          <div class="btb-phone" id="btb-p3" style="left:87%;top:18%">
+            <div class="btb-phone-ico">📱</div>
+            <div class="btb-phone-name">Blackberry 9700</div>
+            <div class="btb-phone-sub">HFP · A2DP</div>
+            <div class="btb-state" id="btb-s3">IDLE</div>
+          </div>
+          <div class="btb-phone" id="btb-p4" style="left:87%;top:80%">
+            <div class="btb-phone-ico">📵</div>
+            <div class="btb-phone-name">Unknown device</div>
+            <div class="btb-phone-sub">00:11:22:33:44:55 · no PIN</div>
+            <div class="btb-state" id="btb-s4">NOT PAIRED</div>
+          </div>
+
+          <div class="btb-hmi">
+            <div class="btb-hmi-brand">PORSCHE</div>
+            <div class="btb-hmi-screen" id="btb-screen">STANDBY</div>
+          </div>
+        </div>
+
+        <div class="sim-h">TEST PLAN TC-BT-2013-088 — LIVE EXECUTION</div>
+        <ul class="vs-steps" id="btb-steps">
+          <li class="vs-step pending"><span class="vs-step-ico">🔗</span><div class="vs-step-body"><b>Pair iPhone 3GS</b> — secure simple pairing, PIN exchange, link-key stored in carkit NV memory</div><span class="vs-step-state">QUEUED</span></li>
+          <li class="vs-step pending"><span class="vs-step-ico">📇</span><div class="vs-step-body"><b>Phonebook sync (PBAP)</b> — all 248 contacts pulled to the head-unit, special characters verified on HMI display</div><span class="vs-step-state">QUEUED</span></li>
+          <li class="vs-step pending"><span class="vs-step-ico">📞</span><div class="vs-step-body"><b>Pair Nokia N73 + incoming call</b> — ring tone on car speakers, answered from steering-wheel button, audio routed, mic active</div><span class="vs-step-state">QUEUED</span></li>
+          <li class="vs-step pending"><span class="vs-step-ico">📤</span><div class="vs-step-body"><b>Outgoing call — voice dial via iPhone</b> — HFP AT+BLDN, Nokia call auto-held, audio source switch &lt; 1s</div><span class="vs-step-state">QUEUED</span></li>
+          <li class="vs-step pending"><span class="vs-step-ico">➕</span><div class="vs-step-body"><b>Multi-point test</b> — Blackberry paired while a call is queued: 3 phones connected simultaneously, active-audio arbitration correct</div><span class="vs-step-state">QUEUED</span></li>
+          <li class="vs-step pending"><span class="vs-step-ico">🛡️</span><div class="vs-step-body"><b>Security check — unauthorised pairing</b> — rogue device attempts pairing with no PIN: must be REJECTED and carkit must leave discoverable mode</div><span class="vs-step-state">QUEUED</span></li>
+          <li class="vs-step pending"><span class="vs-step-ico">🔁</span><div class="vs-step-body"><b>Stress — 1000 connect/disconnect cycles</b> — no state-machine deadlock, no lost pairing, active calls survive re-connect</div><span class="vs-step-state">QUEUED</span></li>
+        </ul>
+      </div>
     `;
 
     // bluetooth wave animation
@@ -560,7 +1666,7 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span> (EventCode=<
       bars.push(b);
     }
     let cycles = 0, calls = 0, bugs = 0;
-    const waveInt = setInterval(() => {
+    timers.every(() => {
       bars.forEach((b, i) => {
         const h = Math.abs(Math.sin((Date.now() / 200) + i * 0.3)) * 70 + 5;
         b.style.height = h + 'px';
@@ -568,7 +1674,7 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span> (EventCode=<
     }, 60);
 
     // counter interval
-    const cntInt = setInterval(() => {
+    timers.every(() => {
       cycles += Math.floor(Math.random() * 7) + 1;
       if (Math.random() > 0.7) calls += 1;
       if (Math.random() > 0.95) bugs += 1;
@@ -577,11 +1683,158 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span> (EventCode=<
       const c3 = $('#bt-bugs', host);   if (c3) c3.textContent = bugs;
     }, 600);
 
-    host.__cleanup = () => { clearInterval(waveInt); clearInterval(cntInt); };
+    /* ---- 3rd tab: Porsche carkit live bench ---- */
+    const stage = $('#btb-stage', host);
+    const svg = vsInitSvg(stage, 260);
+    const VB = 260;
+    // links from each phone to the HMI (packets hidden until phase runs)
+    const l1 = vsLink(svg, 13, 18, 50, 50, VB, { hidden: true }); // iPhone
+    const l2 = vsLink(svg, 13, 80, 50, 50, VB, { hidden: true }); // Nokia
+    const l3 = vsLink(svg, 87, 18, 50, 50, VB, { hidden: true }); // Blackberry
+    const l4 = vsLink(svg, 87, 80, 50, 50, VB, { hidden: true }); // rogue
+
+    const screen = $('#btb-screen', host);
+    const hmi = (html, alert) => {
+      screen.className = 'btb-hmi-screen' + (alert ? ' alert' : '');
+      screen.innerHTML = html;
+    };
+    const phone = (id, stateId, cls, stateTxt) => {
+      const p = $(id, host); const s = $(stateId, host);
+      if (p) p.className = 'btb-phone ' + cls;
+      if (s) s.textContent = stateTxt;
+    };
+    const resetBench = () => {
+      phone('#btb-p1', '#btb-s1', '', 'IDLE');
+      phone('#btb-p2', '#btb-s2', '', 'IDLE');
+      phone('#btb-p3', '#btb-s3', '', 'IDLE');
+      phone('#btb-p4', '#btb-s4', '', 'NOT PAIRED');
+      [l1, l2, l3, l4].forEach((l) => { if (l) { l.off(); l.deactivate(); } });
+      hmi('STANDBY');
+    };
+
+    function playBench() {
+      resetBench();
+      const phases = [
+        { // 1. pair iPhone
+          dur: 2600,
+          run() {
+            hmi('PAIRING…<br><span class="big">iPhone 3GS</span>');
+            if (l1) { l1.activate(); }
+          },
+          end() {
+            phone('#btb-p1', '#btb-s1', 'linked', 'CONNECTED');
+            if (l1) l1.packets(3, 'var(--neon)', 1.1).on();
+            hmi('PAIRED<br><span class="big">iPhone 3GS</span><br>1 DEVICE');
+          }
+        },
+        { // 2. PBAP contact sync
+          dur: 3200,
+          run() {
+            hmi('PHONEBOOK SYNC<br><span class="big">0 / 248</span>');
+            if (l1) { l1.off(); l1.packets(6, 'var(--neon-2)', 0.7).on(); }
+            let n = 0;
+            const cnt = timers.every(() => {
+              n = Math.min(248, n + 9);
+              hmi(`PHONEBOOK SYNC<br><span class="big">${n} / 248</span>`);
+              if (n >= 248) clearInterval(cnt);
+            }, 90);
+            timers.later(() => clearInterval(cnt), 3200);
+          },
+          end() {
+            if (l1) { l1.off(); l1.packets(2, 'var(--neon)', 1.4).on(); }
+            hmi('PHONEBOOK<br><span class="big">248 CONTACTS ✓</span>');
+          }
+        },
+        { // 3. pair Nokia + incoming call
+          dur: 3400,
+          run() {
+            phone('#btb-p2', '#btb-s2', 'ringing', 'INCOMING CALL');
+            if (l2) { l2.activate(); l2.packets(4, 'var(--neon-4)', 0.9).on(); }
+            hmi('PAIRING…<br><span class="big">Nokia N73</span><br>then INCOMING CALL…');
+            timers.later(() => {
+              phone('#btb-p2', '#btb-s2', 'linked', 'RINGING → ANSWERED');
+              hmi('INCOMING CALL<br><span class="big">Nokia N73</span><br>📞 ANSWERED — MIC ON');
+            }, 1500);
+          },
+          end() {
+            phone('#btb-p2', '#btb-s2', 'linked', 'CALL ACTIVE');
+            if (l2) { l2.off(); l2.packets(2, 'var(--neon)', 1.3).on(); }
+            hmi('CALL 00:07<br><span class="big">Nokia N73</span><br>audio → car speakers');
+          }
+        },
+        { // 4. outgoing call via iPhone (Nokia held)
+          dur: 3200,
+          run() {
+            phone('#btb-p2', '#btb-s2', 'linked hold', 'ON HOLD');
+            phone('#btb-p1', '#btb-s1', 'linked', 'DIALING…');
+            if (l1) { l1.off(); l1.packets(5, 'var(--neon-4)', 0.8).on(); }
+            hmi('VOICE DIAL<br><span class="big">+216 98 123 456</span><br>AT+BLDN → dialing…');
+            timers.later(() => {
+              hmi('CALL 00:04<br><span class="big">+216 98 123 456</span><br>Nokia call auto-held');
+            }, 1400);
+          },
+          end() {
+            phone('#btb-p1', '#btb-s1', 'linked', 'CALL ACTIVE');
+            if (l1) { l1.off(); l1.packets(2, 'var(--neon)', 1.3).on(); }
+            hmi('2 CALLS<br><span class="big">1 ACTIVE · 1 HELD</span>');
+          }
+        },
+        { // 5. multi-point: Blackberry joins
+          dur: 3000,
+          run() {
+            phone('#btb-p3', '#btb-s3', 'linked', 'CONNECTING');
+            if (l3) { l3.activate(); l3.packets(3, 'var(--neon)', 1.0).on(); }
+            hmi('MULTI-POINT<br><span class="big">3 PHONES</span><br>pairing Blackberry…');
+          },
+          end() {
+            phone('#btb-p3', '#btb-s3', 'linked', 'CONNECTED');
+            hmi('MULTI-POINT ACTIVE<br><span class="big">3 PHONES</span><br>audio arbitration OK');
+          }
+        },
+        { // 6. security: rogue pairing attempt
+          dur: 3200,
+          run() {
+            phone('#btb-p4', '#btb-s4', '', 'PAIRING ATTEMPT');
+            if (l4) { l4.activate(); l4.packets(4, 'var(--neon-3)', 0.6).on(); }
+            hmi('PAIRING REQUEST<br><span class="big">00:11:22:33:44:55</span><br>no PIN provided…', false);
+            timers.later(() => {
+              hmi('PAIRING REJECTED<br><span class="big">⛔ ACCESS DENIED</span><br>discoverable mode OFF', true);
+              phone('#btb-p4', '#btb-s4', 'blocked', 'REJECTED ✓');
+            }, 1600);
+          },
+          end() {
+            if (l4) l4.off();
+            hmi('SECURITY CHECK<br><span class="big">ROGUE BLOCKED ✓</span>', false);
+          }
+        },
+        { // 7. stress cycles
+          dur: 3600,
+          run() {
+            if (l1) { l1.off(); l1.packets(4, 'var(--neon-2)', 0.5).on(); }
+            if (l2) { l2.off(); l2.packets(3, 'var(--neon-2)', 0.6).on(); }
+            if (l3) { l3.off(); l3.packets(3, 'var(--neon-2)', 0.6).on(); }
+            let c = 0;
+            const cyc = timers.every(() => {
+              c = Math.min(1000, c + 37);
+              hmi(`STRESS TEST<br><span class="big">${c} / 1000</span><br>connect ↔ disconnect`);
+              if (c >= 1000) clearInterval(cyc);
+            }, 100);
+            timers.later(() => clearInterval(cyc), 3600);
+          },
+          end() {
+            hmi('STRESS DONE<br><span class="big">1000 CYCLES ✓</span><br>0 deadlocks · 0 lost pairs');
+          }
+        }
+      ];
+      const total = vsRunSteps($('#btb-steps', host), timers, phases);
+      timers.later(() => playBench(), total + 4200); // loop the bench
+    }
+    playBench();
 
     ctx.tabs = [
-      { id: 'sim',  label: '// Live Simulation' },
-      { id: 'bug',  label: '// Bugzilla Report' }
+      { id: 'sim',    label: '// Live Simulation' },
+      { id: 'bug',    label: '// Bugzilla Report' },
+      { id: 'carkit', label: '// Car-Kit Live Test' }
     ];
   };
 
@@ -677,13 +1930,6 @@ result = analyzer.analyze_detection(detection, <span class="k">provider</span>=A
   /* =================================================================
    *  7. HOME LAB — Attack Chain (same as soc-homelab but tabs differ)
    * ================================================================= */
-  SIMS['homelab-attack-chain'] = (host, ctx) => {
-    SIMS['soc-homelab'](host, ctx);
-    // override header text
-    const head = $('.sim-h', host);
-    if (head) head.textContent = 'SOC + PENTEST HOME LAB — 9-PHASE ATTACK CHAIN';
-  };
-
   /* =================================================================
    *  8. SKILL SIMULATIONS — keyed by skill name
    *     Renders a contextual mini-sim calibrated to the skill level
@@ -1381,7 +2627,7 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span>
             <span class="skill-modal-lvl" style="border-color:var(--neon-3);color:var(--neon-3)">VERIFIED</span>
           </div>
           <div class="cert-image-frame">
-            <img src="${issuerC}" alt="${escapeHtmlS(cert.title)} certificate image" loading="lazy" />
+            <img src="${issuerC}" alt="${escapeHtmlS(cert.title)} certificate image" loading="lazy" onerror="this.onerror=null;this.src='${fb(CERT_FALLBACK, issuerC, 'assets/certificates/google-cybersecurity.svg')}'" />
             <div class="cert-image-corner ctc-tl"></div>
             <div class="cert-image-corner ctc-tr"></div>
             <div class="cert-image-corner ctc-bl"></div>
@@ -1393,7 +2639,7 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span>
             <span class="skill-modal-name">${escapeHtmlS(cert.title)}</span>
           </div>
           <div class="cert-view-issuer-row">
-            <img src="${issuerLogo}" alt="${escapeHtmlS(cert.issuer)} logo" class="cert-view-issuer-logo" loading="lazy" />
+            <img src="${issuerLogo}" alt="${escapeHtmlS(cert.issuer)} logo" class="cert-view-issuer-logo" loading="lazy" onerror="this.onerror=null;this.src='${fb(LOGO_FALLBACK, issuerLogo, 'assets/issuer-logos/google.svg')}'" />
             <div>
               <div class="cv-issuer-name">${escapeHtmlS(cert.issuer)}</div>
               <div class="cv-issue-date">Issued: ${escapeHtmlS(cert.date)}</div>
@@ -1433,6 +2679,28 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span>
     `;
   }
 
+  /* SVG fallbacks (used automatically when local PNG/JPG assets are absent) */
+  const LOGO_FALLBACK = {
+    'assets/issuer-logos/HTB-Logo.png':     'assets/issuer-logos/htb.svg',
+    'assets/issuer-logos/Comptia-Logo.png': 'assets/issuer-logos/comptia.svg',
+    'assets/issuer-logos/THM-Logo.jpg':     'assets/issuer-logos/tryhackme.svg',
+    'assets/issuer-logos/Google-Logo.png':  'assets/issuer-logos/google.svg',
+    'assets/issuer-logos/ATSQA-Logo.jpeg':  'assets/issuer-logos/atsqa.svg'
+  };
+  const CERT_FALLBACK = {
+    'assets/certificates/HTB-CDSA.png':            'assets/certificates/htb-cdsa.svg',
+    'assets/certificates/Network+.png':            'assets/certificates/comptia-network-plus.svg',
+    'assets/certificates/Security+.png':           'assets/certificates/comptia-security-plus.svg',
+    'assets/certificates/Cyber-Security-101.png':  'assets/certificates/thm-cyber-101.svg',
+    'assets/certificates/Jr-PenTester.png':        'assets/certificates/thm-jr-pentester.svg',
+    'assets/certificates/SOC-L1.png':              'assets/certificates/thm-soc-l1.svg',
+    'assets/certificates/SOC-L2.png':              'assets/certificates/thm-soc-l2.svg',
+    'assets/certificates/Google-Cybersecurity.png':'assets/certificates/google-cybersecurity.svg',
+    'assets/certificates/CTFL.png':                'assets/certificates/istqb-ctfl.svg',
+    'assets/certificates/CTFL-AT.png':             'assets/certificates/istqb-ctfl-at.svg'
+  };
+  function fb(map, src, dflt) { return map[src] || dflt; }
+
   function issuerLogoForCert(cert) {
     const m = {
       htb:       'assets/issuer-logos/HTB-Logo.png',
@@ -1466,16 +2734,16 @@ index=main sourcetype=<span class="s">"WinEventLog:Security"</span>
     };
     if (cert.issuerKey && m[cert.issuerKey]) return m[cert.issuerKey];
     const byName = {
-	  'HTB Certified Defensive Security Analyst (CDSA)':	'assets/certificates/HTB-CDSA.png',
-      'CompTIA Network+ (N10-009)':	'assets/certificates/Network+.png',
-      'CompTIA Security+ (SY0-701)':	'assets/certificates/Security+.png',
-      'Cyber Security 101':	'assets/certificates/Cyber-Security-101.png',
-      'Jr Penetration Tester':	'assets/certificates/Jr-PenTester.png',
-      'SOC Level 1':	'assets/certificates/SOC-L1.png',
-      'SOC Level 2':	'assets/certificates/SOC-L2.png',
-      'Google Cybersecurity Professional Certificate':	'assets/certificates/Google-Cybersecurity.png',
-      'ISTQB Certified Tester Foundation Level (CTFL)':	'assets/certificates/CTFL.png',
-      'ISTQB Certified Tester Foundation Level — Agile Tester (CTFL-AT)':	'assets/certificates/CTFL-AT.png'
+          'HTB Certified Defensive Security Analyst (CDSA)':    'assets/certificates/HTB-CDSA.png',
+      'CompTIA Network+ (N10-009)':     'assets/certificates/Network+.png',
+      'CompTIA Security+ (SY0-701)':    'assets/certificates/Security+.png',
+      'Cyber Security 101':     'assets/certificates/Cyber-Security-101.png',
+      'Jr Penetration Tester':  'assets/certificates/Jr-PenTester.png',
+      'SOC Level 1':    'assets/certificates/SOC-L1.png',
+      'SOC Level 2':    'assets/certificates/SOC-L2.png',
+      'Google Cybersecurity Professional Certificate':  'assets/certificates/Google-Cybersecurity.png',
+      'ISTQB Certified Tester Foundation Level (CTFL)': 'assets/certificates/CTFL.png',
+      'ISTQB Certified Tester Foundation Level — Agile Tester (CTFL-AT)':       'assets/certificates/CTFL-AT.png'
     };
     return byName[cert.title] || 'assets/certificates/Google-Logo.png';
   }
