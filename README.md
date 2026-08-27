@@ -40,8 +40,26 @@ souhaieb-marzouk-resume/
 │   ├── simulations.js      # In-browser simulations for experiences / skills / projects
 │   └── main.js             # Boot sequence, matrix rain, typed text, modals, scroll reveal
 ├── assets/
+│   ├── certificates
+│   │	├── CTFL-AT.png
+│   │	├── CTFL.png
+│   │	├── Cyber-Security-101.png
+│   │	├── Google-Cybersecurity.png
+│   │	├── HTB-CDSA.png
+│   │	├── Jr-PenTester.png
+│   │	├── Network+.png
+│   │	├── SOC-L1.png
+│   │	├── SOC-L2.png
+│   │	└── Security+.png
+│   ├── issuer-logos
+│   │	├── ATSQA-Logo.jpeg
+│   │	├── Comptia-Logo.png
+│   │	├── Google-Logo.png
+│   │	├── HTB-Logo.png
+│   │	└── THM-Logo.jpg
+│   ├── 
 │   ├── favicon.svg         # Browser tab icon
-│   └── profile-placeholder.svg  # Replace with your real photo
+│   └── profile-placeholder.png  # Replace with your real photo
 ├── preview/                # Screenshots for quick reference (safe to delete)
 ├── README.md               # This file
 └── DEPLOYMENT.md            # Beginner-friendly GitHub Pages publishing guide
