@@ -353,9 +353,17 @@
   }
 
   function renderCerts() {
-    const host = $('#certs-grid');
+    const industrial = D.certifications.filter(c => c.category === 'industrial');
+    const learning   = D.certifications.filter(c => c.category === 'learning');
+    renderCertGrid($('#certs-grid-industrial'), industrial);
+    renderCertGrid($('#certs-grid-learning'),   learning);
+  }
+
+  function renderCertGrid(host, certs) {
     if (!host) return;
-    host.innerHTML = D.certifications.map((c, i) => `
+    host.innerHTML = certs.map(c => {
+      const i = D.certifications.indexOf(c);  // global index for click handler
+      return `
       <button type="button" class="cert-card" data-cert-index="${i}"
               aria-label="View certificate: ${escapeHtml(c.title)} — ${escapeHtml(c.issuer)} (${escapeHtml(c.date)})">
         <div class="cert-head">
@@ -373,7 +381,8 @@
           <span class="arrow">→</span>
         </div>
       </button>
-    `).join('');
+    `;
+    }).join('');
   }
 
   /* =================================================================

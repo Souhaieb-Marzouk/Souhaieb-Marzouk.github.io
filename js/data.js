@@ -49,7 +49,7 @@ const RESUME_DATA = {
       period: "2023 — Present",
       type: "Full-time, Career Gap filled with Projects, Certifications, Practical Labs & Skills development",
       summary: "",
-	  highlights: [
+          highlights: [
         "Built complete SOC + Pentest home lab (Active Directory, Splunk SIEM, Sysmon) simulating a 9-phase attack chain from phishing macro to LSASS dumping; authored Splunk SPL detections and Sigma rules mapped to MITRE ATT&CK for each phase, with full IR documentation.",
         "Architected, deployed and validated CyberGuardian application, an open-source malware detection tool integrating YARA rules, VirusTotal API, and AI-based analysis with automatic MITRE ATT&CK technique mapping.",
         "Earned HTB CDSA — examiner praised \"The way you documented the detection activities was commendable and easy to follow. Your report is nicely structured as well. Well done!\"",
@@ -133,16 +133,16 @@ const RESUME_DATA = {
       group: "SIEM & Detection",
       icon: "📡",
       skills: [
-        { name: "Splunk SPL",            level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA","Home Lab"] },
-        { name: "Splunk CIM",            level: "Beginner",     percent: 40, sources: ["TryHackMe"] },
-        { name: "Splunk Alerts/Dashboards", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA"] },
+        { name: "Log Parsing",           level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
+		{ name: "Detection Engineering", level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Home Lab","Sagemcom","LibertyGlobal"] },
+        { name: "Alert Triage",          level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
+		{ name: "Splunk SPL",            level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA","Home Lab"] },
+		{ name: "Splunk Alerts/Dashboards", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA"] },
         { name: "Sysmon",                level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Home Lab"] },
         { name: "Windows Event Logs",    level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA","Home Lab"] },
-        { name: "Kibana",                level: "Beginner",     percent: 40, sources: ["TryHackMe","HTB CDSA"] },
-        { name: "Log Parsing",           level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
-        { name: "Sigma Rule Authoring",  level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA","Home Lab"] },
-        { name: "Detection Engineering", level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Home Lab","Sagemcom","LibertyGlobal"] },
-        { name: "Alert Triage",          level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] }
+		{ name: "Sigma Rule Authoring",  level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA","Home Lab"] },
+        { name: "Splunk CIM",            level: "Beginner",     percent: 40, sources: ["TryHackMe"] },
+        { name: "Kibana",                level: "Beginner",     percent: 40, sources: ["TryHackMe","HTB CDSA"] }
       ]
     },
     {
@@ -153,11 +153,11 @@ const RESUME_DATA = {
         { name: "Network Forensics / Packet Analysis", level: "Advanced", percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
         { name: "Memory Forensics (Volatility 3)", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA"] },
         { name: "Disk Forensics (Autopsy)", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA"] },
-        { name: "Disk Forensics (FTK Imager)", level: "Beginner", percent: 40, sources: ["TryHackMe","HTB CDSA"] },
         { name: "Malware Analysis (YARA)", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Home Lab"] },
-        { name: "Malware Analysis (PEStudio)", level: "Beginner", percent: 40, sources: ["TryHackMe","HTB CDSA"] },
         { name: "Process Analysis (Procmon)", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB CDSA"] },
         { name: "KAPE", level: "Beginner", percent: 40, sources: ["TryHackMe","HTB CDSA"] },
+		{ name: "Malware Analysis (PEStudio)", level: "Beginner", percent: 40, sources: ["TryHackMe","HTB CDSA"] },
+		{ name: "Disk Forensics (FTK Imager)", level: "Beginner", percent: 40, sources: ["TryHackMe","HTB CDSA"] },
         { name: "Steganography Detection", level: "Beginner", percent: 40, sources: ["TryHackMe"] }
       ]
     },
@@ -168,18 +168,18 @@ const RESUME_DATA = {
         { name: "Nmap",            level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
         { name: "Wireshark",       level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
         { name: "tcpdump",         level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
-        { name: "OSINT Framework", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB"] },
-        { name: "OWASP Top 10",    level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB"] },
         { name: "CVSS v3.1",       level: "Advanced",     percent: 80, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
+		{ name: "OSINT Framework", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB"] },
+        { name: "OWASP Top 10",    level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB"] },
         { name: "NIST SP 800-115", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","LibertyGlobal"] },
         { name: "Burp Suite",      level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB"] },
         { name: "Metasploit",      level: "Beginner",     percent: 40, sources: ["TryHackMe","HTB"] }
       ]
     },
-	{
+        {
       group: "Networking & Protocols",
       icon: "🌐",
-	  split: true,
+          split: true,
       skills: [
         { name: "TCP/IP",        level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
         { name: "DHCP",          level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
@@ -191,8 +191,6 @@ const RESUME_DATA = {
         { name: "TR-069 / CWMP", level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal"] },
         { name: "ARP",           level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
         { name: "ICMP",          level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
-        { name: "GRE",           level: "Intermediate", percent: 60, sources: ["Sagemcom"] },
-        { name: "PPP",           level: "Intermediate", percent: 60, sources: ["Sagemcom"] },
         { name: "WiFi WPA2/WPA3/WiFi 6", level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal"] },
         { name: "DOCSIS",        level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal"] },
         { name: "XGPON",         level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal"] },
@@ -200,19 +198,21 @@ const RESUME_DATA = {
         { name: "Firewall",      level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
         { name: "ACL",           level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
         { name: "NAT",           level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal","TryHackMe"] },
-        { name: "QoS",           level: "Intermediate", percent: 60, sources: ["Sagemcom","LibertyGlobal"] },
         { name: "IPSec",         level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal"] },
-        { name: "AES Encryption", level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal"] }
+        { name: "AES Encryption", level: "Advanced", percent: 80, sources: ["Sagemcom","LibertyGlobal"] },
+		{ name: "GRE",           level: "Intermediate", percent: 60, sources: ["Sagemcom"] },
+        { name: "PPP",           level: "Intermediate", percent: 60, sources: ["Sagemcom"] },
+        { name: "QoS",           level: "Intermediate", percent: 60, sources: ["Sagemcom","LibertyGlobal"] }
       ]
     },
     {
       group: "Cloud & DevSecOps",
       icon: "☁️",
       skills: [
-        { name: "Azure",          level: "Beginner",     percent: 40, sources: ["TryHackMe","Capgemini"] },
         { name: "Docker",         level: "Intermediate", percent: 60, sources: ["TryHackMe","LibertyGlobal"] },
         { name: "Jenkins",        level: "Intermediate", percent: 60, sources: ["TryHackMe","Capgemini"] },
         { name: "GitHub Actions", level: "Intermediate", percent: 60, sources: ["TryHackMe","Capgemini"] },
+		{ name: "Azure",          level: "Beginner",     percent: 40, sources: ["TryHackMe","Capgemini"] },
         { name: "TheHive",        level: "Beginner",     percent: 40, sources: ["TryHackMe","HTB"] }
       ]
     },
@@ -224,24 +224,24 @@ const RESUME_DATA = {
         { name: "Cyber Kill Chain", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB"] },
         { name: "Diamond Model",   level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB"] },
         { name: "NIST SP 800-61r2", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Sagemcom"] },
-        { name: "NIST CSF 2.0",    level: "Beginner",     percent: 40, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
         { name: "ISO 27001:2022 Annex A", level: "Intermediate", percent: 60, sources: ["Sagemcom"] },
         { name: "STRIDE",          level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
-        { name: "CVE",             level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] }
+        { name: "CVE",             level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] },
+		{ name: "NIST CSF 2.0",    level: "Beginner",     percent: 40, sources: ["TryHackMe","HTB","Sagemcom","LibertyGlobal"] }
       ]
     },
     {
       group: "Scripting & Automation",
       icon: "💻",
       skills: [
-        { name: "Python",   level: "Intermediate", percent: 60, sources: ["TryHackMe","Coddy.Tech","Sagemcom"] },
+        { name: "Jira",     level: "Advanced",     percent: 80, sources: ["Capgemini","Sagemcom","LibertyGlobal"] },
+		{ name: "Python",   level: "Intermediate", percent: 60, sources: ["TryHackMe","Coddy.Tech","Sagemcom"] },
         { name: "PowerShell", level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Home Lab"] },
         { name: "Bash",     level: "Intermediate", percent: 60, sources: ["TryHackMe","HTB","Final Study Project"] },
         { name: "Java",     level: "Intermediate", percent: 60, sources: ["Capgemini","Final Study Project"] },
         { name: "Selenium", level: "Intermediate", percent: 60, sources: ["Capgemini"] },
         { name: "Appium",   level: "Intermediate", percent: 60, sources: ["Capgemini"] },
-        { name: "CI/CD (Jenkins)", level: "Intermediate", percent: 60, sources: ["Capgemini"] },
-        { name: "Jira",     level: "Advanced",     percent: 80, sources: ["Capgemini","Sagemcom","LibertyGlobal"] }
+        { name: "CI/CD (Jenkins)", level: "Intermediate", percent: 60, sources: ["Capgemini"] }        
       ]
     }
   ],
@@ -252,6 +252,7 @@ const RESUME_DATA = {
       title: "HTB Certified Defensive Security Analyst (CDSA)",
       issuer: "HackTheBox",
       date: "2025",
+      category: "industrial",   // industrial vs learning split
       logo: "🎓",
       logoColor: "#9FE870",
       verifyUrl: "https://www.credly.com/badges/5ba5be32-fcc6-4ddd-8a83-2fd956eab210",
@@ -261,6 +262,7 @@ const RESUME_DATA = {
       title: "SOC Level 2",
       issuer: "TryHackMe",
       date: "2025",
+      category: "learning",   // industrial vs learning split
       logo: "✅",
       logoColor: "#0066B3",
       verifyUrl: "https://tryhackme.com/certificate/THM-IVGFNSN2SK",
@@ -270,6 +272,7 @@ const RESUME_DATA = {
       title: "CompTIA Security+ (SY0-701)",
       issuer: "CompTIA",
       date: "2025",
+      category: "industrial",   // industrial vs learning split
       logo: "🛡️",
       logoColor: "#E91E25",
       verifyUrl: "https://www.credly.com/badges/35da50c1-64c2-4839-a076-02c0cdf12ee1",
@@ -279,6 +282,7 @@ const RESUME_DATA = {
       title: "SOC Level 1",
       issuer: "TryHackMe",
       date: "2024",
+      category: "learning",   // industrial vs learning split
       logo: "✅",
       logoColor: "#0066B3",
       verifyUrl: "https://tryhackme.com/certificate/THM-PSA8JTEKNC",
@@ -288,6 +292,7 @@ const RESUME_DATA = {
       title: "CompTIA Network+ (N10-009)",
       issuer: "CompTIA",
       date: "2024",
+      category: "industrial",   // industrial vs learning split
       logo: "🌐",
       logoColor: "#0070C0",
       verifyUrl: "https://www.credly.com/badges/289f617b-d7f2-4546-923e-402414077b23",
@@ -297,6 +302,7 @@ const RESUME_DATA = {
       title: "Cyber Security 101",
       issuer: "TryHackMe",
       date: "2024",
+      category: "learning",   // industrial vs learning split
       logo: "✅",
       logoColor: "#0066B3",
       verifyUrl: "https://tryhackme.com/certificate/THM-6ND63COVUD",
@@ -306,6 +312,7 @@ const RESUME_DATA = {
       title: "Google Cybersecurity Professional Certificate",
       issuer: "Google / Coursera",
       date: "2024",
+      category: "learning",   // industrial vs learning split
       logo: "🟢",
       logoColor: "#34A853",
       verifyUrl: "https://www.coursera.org/account/accomplishments/professional-cert/25R2PLPWXFVJ",
@@ -315,6 +322,7 @@ const RESUME_DATA = {
       title: "ISTQB Certified Tester Foundation Level — Agile Tester (CTFL-AT)",
       issuer: "AT*SQA",
       date: "2024",
+      category: "industrial",   // industrial vs learning split
       logo: "✅",
       logoColor: "#0066B3",
       verifyUrl: "https://atsqa.org/certified-testers/profile/9d46a58bb59740188ab21ecebed04202",
@@ -324,6 +332,7 @@ const RESUME_DATA = {
       title: "ISTQB Certified Tester Foundation Level (CTFL)",
       issuer: "AT*SQA",
       date: "2024",
+      category: "industrial",   // industrial vs learning split
       logo: "✅",
       logoColor: "#0066B3",
       verifyUrl: "https://atsqa.org/certified-testers/profile/9d46a58bb59740188ab21ecebed04202",
@@ -333,6 +342,7 @@ const RESUME_DATA = {
       title: "Jr Penetration Tester",
       issuer: "TryHackMe",
       date: "2023",
+      category: "learning",   // industrial vs learning split
       logo: "✅",
       logoColor: "#0066B3",
       verifyUrl: "https://tryhackme.com/certificate/THM-AYYUBWYYQG",
