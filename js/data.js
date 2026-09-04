@@ -59,6 +59,28 @@ const RESUME_DATA = {
       stack: ["Splunk SPL", "Sigma", "YARA", "Sysmon", "Volatility 3", "Autopsy", "MITRE ATT&CK", "Python", "PowerShell", "VirtualBox"],
       simulation: "soc-homelab"
     },
+	projects: [
+        {
+          tag: "FREELANCE_PROJECT",
+          role: "Detection Engineer & IR Lead (Freelance)",
+          company: "German Neobank (NDA)",
+          location: "Full Remote · Tunisia",
+          period: "Sep 2025 — Feb 2026",
+          type: "Freelance Project — SOC Modernisation for a BaFin-Regulated Neobank",
+          highlights: [
+            "Detection Engineer on a 2-freelancer engagement modernising a German BaFin-regulated neobank's SOC. Owned detection content, IR documentation, and SOC training.",
+            "Authored 70+ of 140+ production Sigma rules mapped to 50+ MITRE ATT&CK techniques. Built the detection-as-code CI pipeline (Sigma + sigmac + pySigma + Splunk AppInspect) with branch protection, PR review, and positive/negative unit tests.",
+            "Designed and deployed 10+ AWS honey tokens (Thinkst Canary approach) with a Sigma detection firing on any honey token use.",
+            "Authored 35+ NIST SP 800-61r2-aligned IR runbooks and 10+ Confluence wiki pages. Authored 120+ of 180 pages of the BaFin IT audit evidence binder, including the Detection Coverage Report and the ATT&CK Navigator layer file showing 75%+ weighted coverage.",
+            "Delivered 4 SOC training sessions (Splunk SPL, Sigma authoring, alert triage, IR runbook walkthrough) to 2 internal junior SOC analysts.",
+            "Achieved MTTD under 15 minutes and MTTR under 2 hours for high-severity incidents during hypercare."
+          ],
+          stack: ["Sigma", "pySigma", "sigmac", "Splunk AppInspect", "Splunk SPL", "MITRE ATT&CK", "Thinkst Canary", "NIST SP 800-61r2", "Confluence"]
+        }
+      ],
+      stack: ["Splunk SPL", "Sigma", "YARA", "Sysmon", "Volatility 3", "Autopsy", "MITRE ATT&CK", "Python", "PowerShell", "VirtualBox"],
+      simulation: "soc-homelab"
+    },
     {
       id: "libertyglobal",
       role: "Senior Network Protocol Validation & Vulnerability Assessment Engineer",

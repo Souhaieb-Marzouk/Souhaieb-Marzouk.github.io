@@ -244,6 +244,28 @@
           <ul class="exp-highlights">
             ${exp.highlights.map(h => `<li>${escapeHtml(h)}</li>`).join('')}
           </ul>
+		  ${(exp.projects && exp.projects.length) ? `
+          <div class="exp-projects">
+            ${exp.projects.map(pr => `
+            <div class="exp-subproject">
+              <div class="exp-sub-tag"><span class="blink">▸</span> ${escapeHtml(pr.tag || 'PROJECT')} <span class="exp-sub-tag-dim">// embedded_engagement</span></div>
+              <div class="exp-sub-head">
+                <div>
+                  <div class="exp-sub-role">${escapeHtml(pr.role)}</div>
+                  <div class="exp-sub-company">${escapeHtml(pr.company)} <span class="exp-loc">▸ ${escapeHtml(pr.location)}</span></div>
+                </div>
+                <span class="exp-sub-period">${escapeHtml(pr.period)}</span>
+              </div>
+              <div class="exp-sub-type">${escapeHtml(pr.type)}</div>
+              <ul class="exp-sub-highlights">
+                ${pr.highlights.map(h => `<li>${escapeHtml(h)}</li>`).join('')}
+              </ul>
+              ${(pr.stack && pr.stack.length) ? `
+              <div class="exp-stack exp-sub-stack">
+                ${pr.stack.map(s => `<span class="stack-chip">${escapeHtml(s)}</span>`).join('')}
+              </div>` : ''}
+            </div>`).join('')}
+          </div>` : ''}
           <div class="exp-stack">
             ${exp.stack.map(s => `<span class="stack-chip">${escapeHtml(s)}</span>`).join('')}
           </div>
