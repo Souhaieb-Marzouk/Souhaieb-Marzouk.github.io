@@ -244,7 +244,7 @@
           <ul class="exp-highlights">
             ${exp.highlights.map(h => `<li>${escapeHtml(h)}</li>`).join('')}
           </ul>
-		  ${(exp.projects && exp.projects.length) ? `
+          ${(exp.projects && exp.projects.length) ? `
           <div class="exp-projects">
             ${exp.projects.map(pr => `
             <div class="exp-subproject">
