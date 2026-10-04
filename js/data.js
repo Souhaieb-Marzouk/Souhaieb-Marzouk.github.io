@@ -43,34 +43,34 @@ const RESUME_DATA = {
   experiences: [
     {
       id: "ind-research",
-      role: "Full-time Cybersecurity Specialization & Skill Development",
-      company: "Freelancer",
+      role: "Independent Security Research & Skill Development",
+      company: "Self-directed professional development",
       location: "Tunisia",
       period: "2023 — Present",
       type: "Full-time, Career Gap filled with Projects, Certifications, Practical Labs & Skills development",
       summary: "",
           highlights: [
-        "Built complete SOC + Pentest home lab (Active Directory, Splunk SIEM, Sysmon) simulating a 9-phase attack chain from phishing macro to LSASS dumping; authored Splunk SPL detections and Sigma rules mapped to MITRE ATT&CK for each phase, with full IR documentation.",
-        "Architected, deployed and validated CyberGuardian application, an open-source malware detection tool integrating YARA rules, VirusTotal API, and AI-based analysis with automatic MITRE ATT&CK technique mapping.",
-        "Earned HTB CDSA — examiner praised \"The way you documented the detection activities was commendable and easy to follow. Your report is nicely structured as well. Well done!\"",
-        "Completed 400+ TryHackMe hands-on labs (Blue & Red Team paths), ranked global top 1%; 50+ CTF challenges.",
-        "Created cybersecurity education content (Udemy courses + dedicated website) covering MITRE ATT&CK tactics, SOC analyst jargon, and certification prep with real-world examples."
+        "Develop and operate a threat intelligence and detection-as-code platform that validates Sigma rules through GitHub Actions CI/CD and maps MITRE ATT&amp;CK techniques to threat groups, mitigations, and regulatory frameworks (GDPR, HIPAA, PCI DSS); includes 30+ production-ready Sigma rules, Splunk SPL queries, and animated attack simulations, currently covering 10+ techniques and 10+ threat groups.",
+        "Built and documented a complete SOC and penetration testing home lab - two Windows Server 2019 hosts (domain controller and web server), Windows 10 endpoints, a Kali Linux attacker machine, Splunk SIEM, and Sysmon telemetry - simulating a 9-phase attack chain from phishing-based initial access through PowerShell loader execution, privilege escalation, lateral movement, command-and-control (C2) beaconing, and LSASS credential dumping.",
+        "Authored Splunk SPL queries and MITRE ATT&amp;CK-mapped Sigma detections for each attack phase, supported by custom dashboards and full incident response documentation covering detection, containment, eradication (krbtgt double reset), recovery, and lessons learned.",
+        "Architected CyberGuardian, an open-source malware detection and triage tool that performs local static analysis of Windows endpoints (running processes, registry, local files, and network connections) and correlates findings with YARA rules, the VirusTotal API, and AI-based analysis (OpenAI, Gemini, DeepSeek) for malware classification with automatic MITRE ATT&amp;CK technique mapping; published on GitHub with full documentation.",
+        "Completed 400+ hands-on TryHackMe labs across Blue Team and Red Team paths, ranking in the global top 1%, and solved 50+ capture-the-flag (CTF) challenges."
       ],
       /* Nested freelance project delivered inside this period */
       projects: [
         {
           tag: "FREELANCE_PROJECT",
-          role: "Detection Engineer & IR Lead (Freelance)",
-          company: "German Neobank (NDA)",
+          role: "Detection Engineer",
+          company: "German Neobank (NDA) - Freelance",
           location: "Full Remote · Tunisia",
           period: "Sep 2025 — Feb 2026",
           type: "SOC Modernisation for a BaFin-Regulated Neobank",
           highlights: [
-            "Authored 70+ of 140+ production Sigma rules mapped to 50+ MITRE ATT&CK techniques. Built the detection-as-code CI pipeline (Sigma + sigmac + pySigma + Splunk AppInspect) with branch protection, PR review, and positive/negative unit tests.",
-            "Designed and deployed 10+ AWS honey tokens (Thinkst Canary approach) with a Sigma detection firing on any honey token use.",
-            "Authored 35+ NIST SP 800-61r2-aligned IR runbooks and 10+ Confluence wiki pages. Authored 120+ of 180 pages of the BaFin IT audit evidence binder, including the Detection Coverage Report and the ATT&CK Navigator layer file showing 75%+ weighted coverage.",
-            "Delivered 4 SOC training sessions (Splunk SPL, Sigma authoring, alert triage, IR runbook walkthrough) to 2 internal junior SOC analysts.",
-            "Achieved MTTD under 15 minutes and MTTR under 2 hours for high-severity incidents during hypercare."
+            "Authored 70+ of 140+ production Sigma detection rules mapped to 50+ MITRE ATT&amp;CK techniques, strengthening coverage of cloud, endpoint, and identity threats for a regulated financial institution.",
+            "Built a detection-as-code CI/CD pipeline with branch protection, peer review, and positive/negative unit tests, eliminating manual deployments.",
+            "Translated German BAIT banking IT security requirements into actionable logging requirements and verified per-technique coverage in a Detection Coverage Report and MITRE ATT&amp;CK Navigator layer; delivered 120+ of 180 pages of the audit evidence binder.",
+            "Authored 35+ incident response runbooks aligned to NIST SP 800-61r2 and delivered 4 Security Operations Centre (SOC) training sessions for 2 internal junior analysts, strengthening team response capability.",
+            "Achieved a Mean Time to Detect (MTTD) of approximately 10 minutes and a Mean Time to Respond (MTTR) of approximately 2 hours for high-severity incidents during hypercare."
           ],
           stack: ["Sigma", "pySigma", "sigmac", "Splunk AppInspect", "Splunk SPL", "MITRE ATT&CK", "Thinkst Canary", "NIST SP 800-61r2", "Confluence", "CloudTrail", "VPC Flow Log", ]
         }
@@ -80,51 +80,52 @@ const RESUME_DATA = {
     },
     {
       id: "libertyglobal",
-      role: "Senior Network Protocol Validation & Vulnerability Assessment Engineer",
+      role: "Senior Broadband CPE Security & Protocol Assurance Lead",
       company: "LibertyGlobal (via TEKSystems)",
       location: "Netherlands (Hybrid)",
       period: "2020 — 2023",
       type: "Full-time, Contractor",
       summary: "",
       highlights: [
-        "Performed anomaly-driven security testing and protocol-level threat hunting across LibertyGlobal's production Cable DOCSIS, RDK-B, XGS-PON fiber, and VoIP (Asterisk/Kamailio) infrastructure; identifying misconfigurations, unauthorized services, and protocol-level anomalies in a major European ISP environment serving millions of subscribers.",
-        "Applied deep protocol expertise (DHCP, DNS, HTTP/HTTPS, ARP, ICMP, SIP, RTP, TLS, SSH, TR-069) and encryption analysis (AES, IPSec, SSL, WPA2/WPA3) to detect weak cryptography, misconfigurations, and exploitable vulnerabilities before production deployment.",
-        "Conducted vulnerability assessment and penetration testing using Nmap, Wireshark, tcpdump, and Docker-based test client environments, discovering and documenting vulnerabilities that helped reduce the attack surface of production broadband and voice platforms.",
-        "Validated WiFi security across 2.4GHz / 5GHz / WiFi 6 deployments, assessing WPA2/WPA3 encryption, authentication, and client isolation against eavesdropping, rogue AP, and deauthentication attacks.",
-        "Promoted to lead security testing strategy for the new XGS-PON optical-fiber product line; led and mentored a team of 8 engineers, with daily reporting to client stakeholders on findings, remediation status, and team performance."
+        "Performed anomaly-driven security testing and protocol-level threat hunting across production CPE platforms (DOCSIS cable, RDK-B, XGS-PON fibre, and VoIP infrastructure (Asterisk, Kamailio)) identifying misconfigurations, unauthorized services, and protocol-level anomalies for a major European ISP serving millions of subscribers.",
+        "Applied protocol expertise (DHCP, DNS, HTTP/HTTPS, ARP, ICMP, SIP, RTP, TLS, SSH, TR-069) and encryption analysis (AES, IPSec, SSL, WPA2/WPA3) to detect weak cryptography and exploitable vulnerabilities before production deployment.",
+        "Conducted vulnerability assessments and penetration tests using Nmap, Wireshark, tcpdump, and Docker-based test environments, discovering and documenting vulnerabilities that reduced the attack surface of production broadband and voice platforms.",
+        "Validated Wi-Fi security across 2.4 GHz, 5 GHz, and Wi-Fi 6 deployments, assessing WPA2/WPA3 encryption, authentication, and client isolation against eavesdropping, rogue access point, and deauthentication attacks.",
+        "Promoted to lead testing strategy for the new XGS-PON fibre product line; led and mentored a team of 8 engineers, delivering daily stakeholder reports on findings, remediation status, and team performance."
       ],
       stack: ["DHCP","DNS","SIP/RTP","TLS","SSH","TR-069","DOCSIS 3.0/3.1","XGS-PON","RDK-B","Docker","Jenkins","Jira","Wireshark","tcpdump","Nmap"],
       simulation: "libertyglobal-soc"
     },
     {
       id: "capgemini",
-      role: "Security Quality & Automation Engineer",
+      role: "Mobile & Web Application Security Automation Engineer",
       company: "Capgemini (Altran Portugal)",
       location: "Portugal",
       period: "2019 — 2020",
       type: "Full-time, Permanent",
       summary: "",
       highlights: [
-        "Built automated security test suites for AXA mobile (iOS/Android) and web platforms using Appium, Selenium WebDriver, and Java on Azure cloud. Tests implicitly validated authentication flows, session handling, and access control logic, catching flaws that static analysis missed.",
-        "Integrated test suites into Azure CI/CD pipelines, applying shift-left security principles to catch authentication and access-control regressions during the build phase rather than post-deployment."
+        "Built automated security test suites for AXA mobile (iOS/Android) and web platforms using Appium, Selenium WebDriver, and Java on Microsoft Azure.",
+        "Validated authentication flows, session handling, and access-control logic across end-to-end test scenarios, catching flaws that static analysis tools missed.",
+        "Integrated test suites into Azure CI/CD pipelines applying shift-left security principles, surfacing authentication and access-control regressions during the build phase."
       ],
       stack: ["Java","Selenium","Appium","Azure Cloud","GitHub Actions","Jenkins","CI/CD"],
       simulation: "axa-automation"
     },
     {
       id: "sagemcom",
-      role: "Network Protocol Validation & Vulnerability Assessment Engineer",
+      role: "Broadband CPE Security & Protocol Assurance Engineer",
       company: "SAGEMCOM",
       location: "Tunisia (with on-site EU missions)",
       period: "2014 — 2019",
       type: "Full-time, Permanent",
       summary: "Embedded-device and CPE vulnerability assessment program for European ISP-grade broadband products (routers, gateways, xDSL, DOCSIS, XGS-PON CPE) across 10+ product lines, including direct on-site engagements with 4 major European ISPs:",
       highlights: [
-        "Led vulnerability assessment and protocol-level security testing across the CPE product lines, deployed in production networks serving millions of subscribers across Vodafone, Telia, KDG, TalkTalk, and BBox. Identified misconfigurations, weak authentication, cryptographic flaws, and protocol implementation bugs before production deployment.",
-        "Validated security controls (firewall rules, NAT, VLAN segmentation, IPSec) directly on production gateway hardware via CLI/GUI/SSH; built bidirectional traceability matrices between ISO 27001:2022 Annex A controls, security requirements, and test artifacts; directly contributing to audit readiness.",
-        "Conducted hypothesis-driven hunting for protocol-level anomalies and undocumented vulnerabilities; documenting each finding as a Jira ticket with reproducible exploit steps, test environment, tools used, CVSS severity rating, and remediation proposal. Reported 800+ findings over 5 years, with critical findings triggering pre-release firmware remediation cycles.",
-        "Mentored new engineers on security testing methodology and vulnerability management workflows (recognized by management for elevating team capability).",
-        "Served as primary technical contact for 4 European ISP clients, delivering daily technical reports and on-site briefings in Manchester (TalkTalk), Helsinki (Telia), Lisbon (Vodafone), and Berlin (KDG)."
+        "Led vulnerability assessments and protocol-level security testing across 10+ European ISP-grade broadband product lines (routers, gateways, xDSL, DOCSIS, XGS-PON), including on-site engagements with 4 major European ISPs on carrier networks serving millions of subscribers (Vodafone, Telia, KDG, TalkTalk, BBox).",
+        "Validated security controls (firewall rules, NAT, VLAN segmentation, and IPSec) directly on production gateway hardware via CLI/GUI/SSH, and built bidirectional traceability matrices linking ISO 27001:2022 Annex A controls to security requirements and test artefacts, directly contributing to audit readiness.",
+        "Conducted hypothesis-driven threat hunting for protocol-level anomalies and undocumented vulnerabilities; documented 800+ findings over five years with reproducible exploits, CVSS severity ratings, and remediation proposals, triggering pre-release firmware remediation for critical issues.",
+        "Served as primary technical contact for 4 European ISP clients, delivering daily technical and non-technical reports to different stakeholders.",
+        "Mentored new engineers on security testing methodology and vulnerability management workflows, earning formal recognition from management for elevating team capability."
       ],
       stack: ["Nmap","Wireshark","tcpdump","iperf","Omnipeek","CDRouter","Kali Linux","Bugzilla","Jira","ISO 27001","CVSS v3.0","BBox3","Vodafone","KDG","TalkTalk","Telia","Bouygues","Sunrise","KPN"],
       simulation: "sagemcom-terminal"
@@ -138,8 +139,7 @@ const RESUME_DATA = {
       type: "Full-time, Permanent",
       summary: "",
       highlights: [
-        "Performed adversarial security testing of Bluetooth stack implementations embedded in Parrot automotive products, validating protocol state machines and testing Bluetooth connection scenarios under repeated stress and disconnection conditions, documenting reproducible steps for each finding.",
-        "Developed adversarial testing intuition on the same class of Bluetooth stacks later affected by industry-wide vulnerabilities publicly disclosed as BlueBorne (2017) and BrakTooth (2021), which I studied afterward to understand their impact on similar attack architecture."
+        "Adversarially tested Bluetooth stacks in Parrot automotive infotainment systems via stress and disconnection scenarios, documenting reproducible evidence that enabled firmware teams to prioritize pre-release remediation."
       ],
       stack: ["Bluetooth","Bugzilla","Excel","Manual Testing","Stress Testing","CK3100","Porsche Carkit"],
       simulation: "bluetooth-test"
