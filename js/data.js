@@ -375,6 +375,21 @@ const RESUME_DATA = {
       id: "cyberguardian",
       name: "CyberGuardian",
       tagline: "Open-Source Windows Malware Detection & AI Triage Tool",
+      year: "2026",
+      description: "Multi-layered malware detection tool that performs local static analysis of Windows endpoints (running processes, registry, local files, network connections) and correlates findings with YARA rules, VirusTotal API, and AI-based analysis (OpenAI, Gemini, DeepSeek) for malware classification with automatic MITRE ATT&CK technique mapping. Implementation was AI-assisted using Python; my ownership covered system architecture, detection logic, security validation, threat modeling and VirusTotal/AI integration strategy.",
+      tech: ["Python","psutil","ctypes","YARA","VirusTotal API","OpenAI","Gemini","DeepSeek","Windows API","Tkinter"],
+      githubUrl: "https://github.com/Souhaieb-Marzouk/CyberGuardian",
+      metrics: [
+        { label: "Detection Vectors", value: "5 (Process, File, Registry, Network, Memory)" },
+        { label: "AI Providers",      value: "3 (DeepSeek, OpenAI, Gemini)" },
+        { label: "VirusTotal Engines", value: "70+ AV engines per scan" },
+        { label: "YARA Rules",        value: "Custom + community signatures" }
+      ],
+      simulation: "cyberguardian-scan"
+    },{
+      id: "cyberguardian",
+      name: "CyberGuardian",
+      tagline: "Open-Source Windows Malware Detection & AI Triage Tool",
       year: "2025",
       description: "Multi-layered malware detection tool that performs local static analysis of Windows endpoints (running processes, registry, local files, network connections) and correlates findings with YARA rules, VirusTotal API, and AI-based analysis (OpenAI, Gemini, DeepSeek) for malware classification with automatic MITRE ATT&CK technique mapping. Implementation was AI-assisted using Python; my ownership covered system architecture, detection logic, security validation, threat modeling and VirusTotal/AI integration strategy.",
       tech: ["Python","psutil","ctypes","YARA","VirusTotal API","OpenAI","Gemini","DeepSeek","Windows API","Tkinter"],
@@ -430,7 +445,7 @@ const RESUME_DATA = {
     tertiary: "Penetration Tester",
     availability: "Available immediately",
     relocation: "Worldwide — sponsorship required",
-    remote: "Open to remote / hybrid",
+    remote: "Open to remote / hybrid / On-site",
     workAuth: "Tunisian citizen — EU sponsorship required for on-site work"
   }
 };
