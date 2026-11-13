@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "dev.cipherkeep.app",
+      "sha256_cert_fingerprints": [
+        "14:59:2F:C2:50:B9:F3:E3:14:5C:F5:E5:EE:83:B4:72:26:4E:AE:19:8E:C1:76:7E:98:E2:B9:F4:4C:B6:85:31"
+      ]
+    }
+  }
+]
