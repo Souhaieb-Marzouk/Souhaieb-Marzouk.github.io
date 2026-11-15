@@ -17,7 +17,7 @@ const RESUME_DATA = {
       "10+ years Protocol-level Network Security",
       "Open-source Author — CyberGuardian"
     ],
-    profile: "Mid-level Detection Engineer and SOC Analyst with 10+ years of protocol-level network and security testing (TCP/IP, SIP/RTP, DNS, DHCP, TR-069, WiFi, DOCSIS, XGPON) across telecom, ISP and broadband environments. Now applying deep systems knowledge to SIEM-driven detection engineering and threat hunting. HTB CDSA certified, hands-on Sigma + Splunk SPL authoring validated through certification exams and a reproducible 9-phase Active Directory attack-chain home lab. Designed CyberGuardian, an open-source malware detection tool with YARA + VirusTotal + MITRE ATT&CK integration. 4 years of prior EU work experience (Netherlands, Portugal) plus on-site client engagements in Germany, Finland, UK and Portugal. Led a team of 8 engineers with daily stakeholder reporting. Seeking a SOC L2 or Threat Hunting role to scale detection engineering and incident response at enterprise scale.",
+    profile: "Cybersecurity engineer with over 10 years of experience in networks and telecoms, including about 5 years in technical security. My work covers security testing, vulnerability analysis, SOC detection, incident response, and technical documentation. I have worked on networks and equipment used by millions of subscribers, with assignments at several European ISPs. Certified HTB CDSA, CompTIA Security+, and CompTIA Network+. Experience managing and mentoring a team of 8 engineers.",
     location: "Tunis, Tunisia",
     availability: "Available immediately — open to relocation worldwide & remote",
     contact: {
@@ -49,32 +49,16 @@ const RESUME_DATA = {
       period: "2023 — Present",
       type: "Full-time, Career Gap filled with Projects, Certifications, Practical Labs & Skills development",
       summary: "",
-          highlights: [
-        "Develop and operate a threat intelligence and detection-as-code platform that validates Sigma rules through GitHub Actions CI/CD and maps MITRE ATT&amp;CK techniques to threat groups, mitigations, and regulatory frameworks (GDPR, HIPAA, PCI DSS); includes 30+ production-ready Sigma rules, Splunk SPL queries, and animated attack simulations, currently covering 10+ techniques and 10+ threat groups.",
-        "Built and documented a complete SOC and penetration testing home lab - two Windows Server 2019 hosts (domain controller and web server), Windows 10 endpoints, a Kali Linux attacker machine, Splunk SIEM, and Sysmon telemetry - simulating a 9-phase attack chain from phishing-based initial access through PowerShell loader execution, privilege escalation, lateral movement, command-and-control (C2) beaconing, and LSASS credential dumping.",
-        "Authored Splunk SPL queries and MITRE ATT&amp;CK-mapped Sigma detections for each attack phase, supported by custom dashboards and full incident response documentation covering detection, containment, eradication (krbtgt double reset), recovery, and lessons learned.",
-        "Architected CyberGuardian, an open-source malware detection and triage tool that performs local static analysis of Windows endpoints (running processes, registry, local files, and network connections) and correlates findings with YARA rules, the VirusTotal API, and AI-based analysis (OpenAI, Gemini, DeepSeek) for malware classification with automatic MITRE ATT&amp;CK technique mapping; published on GitHub with full documentation.",
-        "Completed 400+ hands-on TryHackMe labs across Blue Team and Red Team paths, ranking in the global top 1%, and solved 50+ capture-the-flag (CTF) challenges."
+      highlights: [
+        "Completed 400+ hands-on TryHackMe labs (Blue Team and Red Team tracks), ranked in the global top 1%, and solved 50+ capture-the-flag (CTF) challenges.",
+        "CyberGuardian is a Windows defensive-analysis workstation that I designed from start to finish, from collecting data from multiple sources to presenting evidence for SOC analysts. The main problem was time lost reviewing alerts without context, so I added VirusTotal lookups, AI analysis with a four-step response plan, and HTML evidence export, turning a raw detection into a usable investigation case file.",
+        "SecureBox is an open-source Android app for phones and TV boxes. I designed it to give users and analysts a local view of app risks, traffic, ports, and DNS, with no telemetry. To get around Android’s single-VPN limit, which forced a choice between firewall and DNS filtering, I built an app-aware (UID-aware) forwarding engine that combines both, with a per-app bypass mode and clear documentation of detection limits. This meets the evidence and initial-review needs of a SOC workstation.",
+        "CipherKeep is a free, private, subscription-free password manager for Android and Firefox, designed to protect everyday logins and solve the problem of a third-party service that charges for access and can read the data. This project reflects my detection-engineering approach: understand the user’s real risk, reduce dependencies, and check what is exposed before promising protection.",
+        "I designed and built a complete detection-engineering platform aligned with MITRE ATT&CK, covering 208 techniques and sub-techniques, with 328 validated Sigma rules, positive and negative log sets, and 208 interactive attack simulations that turn attacker behavior into activity data defenders can use. It addresses the twin demands of coverage and quality by including automated validation, log sets, and review per technique, giving SOC teams a reliable and scalable foundation.",
+		"I created and documented a complete SOC and penetration-testing home lab: two Windows Server 2019 hosts (a domain controller and a web server), Windows 10 endpoints, a Kali Linux attack machine, Splunk SIEM, and Sysmon system activity logs. I simulated a 9-phase attack chain: initial access through phishing, PowerShell loader execution, privilege escalation, moving between machines, command-and-control (C2) regular check-ins, and LSASS credential dumping. I wrote Splunk SPL queries and Sigma detections mapped to MITRE ATT&CK for each phase, with custom dashboards and full incident-response documentation: detection, containment, eradication (double krbtgt reset), recovery, and lessons learned."
       ],
       /* Nested freelance project delivered inside this period */
-      projects: [
-        {
-          tag: "FREELANCE_PROJECT",
-          role: "Detection Engineer",
-          company: "German Neobank (NDA) - Freelance",
-          location: "Full Remote · Tunisia",
-          period: "Sep 2025 — Feb 2026",
-          type: "SOC Modernisation for a BaFin-Regulated Neobank",
-          highlights: [
-            "Authored 70+ of 140+ production Sigma detection rules mapped to 50+ MITRE ATT&amp;CK techniques, strengthening coverage of cloud, endpoint, and identity threats for a regulated financial institution.",
-            "Built a detection-as-code CI/CD pipeline with branch protection, peer review, and positive/negative unit tests, eliminating manual deployments.",
-            "Translated German BAIT banking IT security requirements into actionable logging requirements and verified per-technique coverage in a Detection Coverage Report and MITRE ATT&amp;CK Navigator layer; delivered 120+ of 180 pages of the audit evidence binder.",
-            "Authored 35+ incident response runbooks aligned to NIST SP 800-61r2 and delivered 4 Security Operations Centre (SOC) training sessions for 2 internal junior analysts, strengthening team response capability.",
-            "Achieved a Mean Time to Detect (MTTD) of approximately 10 minutes and a Mean Time to Respond (MTTR) of approximately 2 hours for high-severity incidents during hypercare."
-          ],
-          stack: ["Sigma", "pySigma", "sigmac", "Splunk AppInspect", "Splunk SPL", "MITRE ATT&CK", "Thinkst Canary", "NIST SP 800-61r2", "Confluence", "CloudTrail", "VPC Flow Log", ]
-        }
-      ],
+      
       stack: ["Splunk SPL", "Sigma", "YARA", "Sysmon", "Volatility 3", "Autopsy", "MITRE ATT&CK", "Python", "PowerShell", "VirtualBox"],
       simulation: "soc-homelab"
     },
